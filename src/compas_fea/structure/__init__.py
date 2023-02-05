@@ -70,6 +70,7 @@ element
     :toctree: generated/
 
     Element
+    MPCElement
     BeamElement
     SpringElement
     TrussElement
@@ -120,6 +121,7 @@ material
     ConcreteSmearedCrack
     ConcreteDamagedPlasticity
     Stiff
+    MPCStiff
     ElasticIsotropic
     ElasticOrthotropic
     ElasticPlastic
@@ -151,6 +153,7 @@ section
     ISection
     PipeSection
     RectangularSection
+    MPCSection
     ShellSection
     MembraneSection
     SolidSection
@@ -194,6 +197,7 @@ from .displacement import (
 )
 from .element import (
     Element,
+    MPCElement,
     BeamElement,
     SpringElement,
     TrussElement,
@@ -231,6 +235,7 @@ from .material import (
     ConcreteDamagedPlasticity,
     ElasticIsotropic,
     Stiff,
+    MPCStiff,
     ElasticOrthotropic,
     ElasticPlastic,
     Steel
@@ -250,6 +255,7 @@ from .section import (
     ISection,
     PipeSection,
     RectangularSection,
+    MPCSection,
     ShellSection,
     MembraneSection,
     SolidSection,
@@ -271,6 +277,7 @@ from .step import (
 )
 from .structure import Structure
 
+
 __all__ = [
     'Constraint',
     'TieConstraint',
@@ -289,6 +296,7 @@ __all__ = [
     'RollerDisplacementXZ',
 
     'Element',
+    'MPCElement'
     'BeamElement',
     'SpringElement',
     'TrussElement',
@@ -327,6 +335,7 @@ __all__ = [
     'ConcreteDamagedPlasticity',
     'ElasticIsotropic',
     'Stiff',
+    'MPCStiff',    
     'ElasticOrthotropic',
     'ElasticPlastic',
     'Steel',
@@ -345,6 +354,7 @@ __all__ = [
     'ISection',
     'PipeSection',
     'RectangularSection',
+    'MPCSection',
     'ShellSection',
     'MembraneSection',
     'SolidSection',

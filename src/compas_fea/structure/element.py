@@ -8,6 +8,7 @@ from __future__ import print_function
 
 __all__ = [
     'Element',
+    'MPCElement'
     'BeamElement',
     'SpringElement',
     'TrussElement',
@@ -103,6 +104,21 @@ class MassElement(Element):
 # ==============================================================================
 # 1D elements
 # ==============================================================================
+
+class MPCElement(Element):
+    
+    """A 1D MPC element
+
+    Parameters
+    ----------
+    None
+
+    """
+
+    def __init__(self):
+        Element.__init__(self)
+
+        self.__name__ = 'MPCElement'
 
 class BeamElement(Element):
 

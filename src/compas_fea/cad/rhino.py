@@ -17,7 +17,7 @@ from compas.geometry import length_vector
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
 from compas_fea.structure import Structure
-
+from time import time
 
 from compas_fea.utilities import colorbar
 from compas_fea.utilities import extrude_mesh
@@ -758,13 +758,13 @@ def plot_mode_shapes(structure, step, layer=None, scale=1.0, radius=1):
     if isinstance(it, list):
         for c, fk in enumerate(it, 1):
             layerk = layer + str(c)
-            plot_data(structure=structure, step=step, field='um', layer=layerk, scale=scale, mode=c, radius=radius)
+            plot_data(structure=structure, step=step, field='um', layer=layerk, scale=scale, mode=c, radius=radius, source=None)
 
     elif isinstance(it, dict):
         for mode, value in it.items():
             print(mode, value)
             layerk = layer + str(mode)
-            plot_data(structure=structure, step=step, field='um', layer=layerk, scale=scale, mode=mode, radius=radius)
+            plot_data(structure=structure, step=step, field='um', layer=layerk, scale=scale, mode=mode, radius=radius, source=None)
 
 
 def plot_volmesh(volmesh, layer=None, draw_cells=True):
@@ -846,7 +846,7 @@ def plot_axes(xyz, e11, e22, e33, layer, sc=1):
 
 
 def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, cbar=[None, None], iptype='mean',
-              nodal='mean', mode='', cbar_size=1):
+              nodal='mean', mode='', cbar_size=1, source=None):
     """
     Plots analysis results on the deformed shape of the Structure.
 
@@ -885,6 +885,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
 
     """
 
+    tic=time()
     if field in ['smaxp', 'smises']:
         nodal = 'max'
         iptype = 'max'
@@ -896,7 +897,72 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
     # Create and clear Rhino layer
 
     if not layer:
-        layer = '{0}-{1}{2}'.format(step, field, mode)
+        if field=='ux':
+            name='(global x-displacements)'
+        elif field == 'uy':
+            name='(global y-displacements)'
+        elif field == 'uz':
+            name='(global z-displacements)'
+        elif field == 'um':
+            name='(global magnitue-displacements)'
+        elif field == 'sf1':
+            name='(membrane forces in local x-direction)'
+        elif field == 'sf2':
+            name='(membrane forces in local y-direction)'
+        elif field == 'sf3':
+            name='(shear forces in local xy-direction)'
+        elif field == 'sf4':
+            name='(transverse shear forces on local x-plane)'
+        elif field == 'sf5':
+            name='(transverse shear forces on local y-plane)'
+        elif field == 'sm1':
+            name='(bending moments around local y-direction)'
+        elif field == 'sm2':
+            name='(bending moments around local x-direction)'
+        elif field == 'sm3':
+            name='(twisting moments in x- and y-directions)'   
+        elif field == 'as_xi_bot':
+            name='(amount of reinf. at bottom cover (local z-direction is positiv) in local xi-direction [mm^2/m])'              
+        elif field == 'as_xi_top':
+            name='(amount of reinf. at top cover (local z-direction is negativ) in local xi-direction [mm^2/m])'    
+        elif field == 'as_eta_bot':
+            name='(amount of reinf. at bottom cover (local z-direction is positiv) in local eta-direction [mm^2/m])'    
+        elif field == 'as_eta_top':
+            name='(amount of reinf. at top cover (local z-direction is negativ) in local eta-direction [mm^2/m])'    
+        elif field == 'as_z':
+            name='(amount of reinf. at in local z-direction [mm^2/m])'    
+        elif field == 'CC_bot':
+            name='(values for concrete failure bottom cover (local z-direction is positiv): 0=no failure, 1=failure but in iteration, 2=failure)'    
+        elif field == 'CC_top':
+            name='(values for concrete failure top cover (local z-direction is negativ): 0=no failure, 1=failure but in iteration, 2=failure)'    
+        elif field == 'k_bot':
+            name='(k-factor of the sandwichmodel bottom cover (local z-direction is positiv))'    
+        elif field == 'k_top':
+            name='(k-factor of the sandwichmodel top cover (local z-direction is negativ))'    
+        elif field == 't_bot':
+            name='(thickness of the sandwich cover bottom cover (local z-direction is positiv))'    
+        elif field == 't_top':
+            name='(thickness of the sandwich cover top cover (local z-direction is negativ))' 
+        elif field == 'psi_bot':
+            name='(angle between reinforcement directions xi and eta bottom cover (local z-direction is positiv))'    
+        elif field == 'psi_top':
+            name='(angle between reinforcement directions xi and eta top cover (local z-direction is negativ))'    
+        elif field == 'Fall_bot':
+            name='(case sandwichmodel cover bottom cover (local z-direction is positiv))'    
+        elif field == 'Fall_top':
+            name='(case sandwichmodel cover top cover (local z-direction is negativ))'    
+        elif field == 'm_cc_bot':
+            name='(degree of utilization for concrete failure bottom cover (local z-direction is positiv))'    
+        elif field == 'm_cc_top':
+            name='(degree of utilization for concrete failure top cover (local z-direction is negativ))'    
+        elif field == 'm_shear_c':
+            name='(degree of utilization for concrete core)'        
+        elif field == 'm_c_total':
+            name='(max degree of utilization for concrete)'                            
+        else:
+            name='(no description available'      
+
+        layer = '{0}-{1}-{3}{2}'.format(step, field, mode,name)
 
     rs.CurrentLayer(rs.AddLayer(layer))
     rs.DeleteObjects(rs.ObjectsByLayer(layer))
@@ -906,6 +972,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
 
     nodes = structure.nodes_xyz()
     elements = [structure.elements[i].nodes for i in sorted(structure.elements, key=int)]
+    
     nodal_data = structure.results[step]['nodal']
     nkeys = sorted(structure.nodes, key=int)
 
@@ -927,7 +994,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
 
     try:
         toc, U, cnodes, fabs, fscaled, celements, eabs = result
-        print('\n***** Data processed : {0} s *****'.format(toc))
+        #print('\n***** Data processed : {0} s *****'.format(toc))
 
         # Plot meshes
 
@@ -941,7 +1008,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
             n = len(nodes)
 
             if n == 2:
-
+                if source != 'SMM':
                 u, v = nodes
                 sp, ep = U[u], U[v]
                 plane = rs.PlaneFromNormal(sp, subtract_vectors(ep, sp))
@@ -1007,7 +1074,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
         colors = [colorbar(2 * (yi - ymin - 0.5 * yn) / yn, input='float', type=255) for yi in y]
         rs.MeshVertexColors(id, colors)
 
-        h = 0.4 * s
+        h = 0.008 * s
 
         for i in range(5):
 
@@ -1035,10 +1102,12 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
         rs.LayerVisible(layer, False)
         rs.EnableRedraw(True)
 
-    except Exception:
 
+    except Exception:
         print('\n***** Error encountered during data processing or plotting *****')
 
+    toc2 = time() - tic
+    print('Plot {1} results in Rhino successful in {0:.3f} s'.format(toc2,field))
 
 def plot_principal_stresses(structure, step, sp, stype, scale, layer=None):
     """

@@ -46,7 +46,6 @@ __all__ = [
 
 def process_data(data, dtype, iptype, nodal, elements, n):
     """Process the raw data.
-
     Parameters
     ----------
     data : dict
@@ -61,14 +60,12 @@ def process_data(data, dtype, iptype, nodal, elements, n):
         Node numbers for each element.
     n : int
         Number of nodes.
-
     Returns
     -------
     array
         Data values for each node.
     array
         Data values for each element.
-
     """
 
     if dtype == 'nodal':
@@ -150,7 +147,7 @@ def process_data(data, dtype, iptype, nodal, elements, n):
 
         if nodal == 'mean':
             vsum = np.asarray(AT.dot(ve))
-            vn = vsum / sum(AT, 1)
+            vn = vsum / AT.sum(1)
 
         else:
             vn = _nodal(rows, cols, 0 if nodal == 'max' else 1, ve, n)
@@ -160,17 +157,14 @@ def process_data(data, dtype, iptype, nodal, elements, n):
 
 def identify_ranges(data):
     """Identifies continuous interger series from a list and returns a list of ranges.
-
     Parameters
     ----------
     data : list
         The list of intergers to process.
-
     Returns
     -------
     list
         A list of identified ranges.
-
     """
 
     data.sort()
@@ -189,7 +183,6 @@ def identify_ranges(data):
 
 def colorbar(fsc, input='array', type=255):
     """Creates RGB color information from -1 to 1 scaled values.
-
     Parameters
     ----------
     fsc : array, float
@@ -198,12 +191,10 @@ def colorbar(fsc, input='array', type=255):
         Input given as an 'array' of numbers or a 'float'.
     type : int
         RGB as 255 or 1 scaled.
-
     Returns
     -------
     array, list
         (n x 3) array of RGB values or single RGB list.
-
     """
 
     r = +abs(fsc + 0.25) * 2 - 0.5
@@ -229,17 +220,14 @@ def colorbar(fsc, input='array', type=255):
 
 def mesh_from_shell_elements(structure):
     """Returns a Mesh datastructure object from a Structure's ShellElement objects.
-
     Parameters
     ----------
     structure: obj
         The structure to extract a Mesh from.
-
     Returns
     -------
     obj
         Mesh datastructure object.
-
     """
 
     ekeys = [ekey for ekey in structure.elements if structure.elements[ekey].__name__ == 'ShellElement']
@@ -291,19 +279,16 @@ def _centre(p1, p2, p3):
 
 def combine_all_sets(sets_a, sets_b):
     """Combines two nested lists of node or element sets into the minimum ammount of set combinations.
-
     Parameters
     ----------
     sets_a : list
         First nested list containing lists of element or node keys.
     sets_b : list
         Second nested list containing lists of element or node keys.
-
     Returns
     -------
     dic
         A dictionary containing the minimum number of set combinations.
-
     """
 
     comb = {}
@@ -317,7 +302,6 @@ def combine_all_sets(sets_a, sets_b):
 
 def group_keys_by_attribute(adict, name, tol='3f'):
     """Make group keys by shared attribute values.
-
     Parameters
     ----------
     adict : dic
@@ -326,12 +310,10 @@ def group_keys_by_attribute(adict, name, tol='3f'):
         Attribute of interest.
     tol : float
         Float tolerance.
-
     Returns
     -------
     dic
         Group dictionary.
-
     """
     groups = {}
     for key, item in adict.items():
@@ -345,7 +327,6 @@ def group_keys_by_attribute(adict, name, tol='3f'):
 
 def group_keys_by_attributes(adict, names, tol='3f'):
     """Make group keys by shared values of attributes.
-
     Parameters
     ----------
     adict : dic
@@ -354,12 +335,10 @@ def group_keys_by_attributes(adict, names, tol='3f'):
         Attributes of interest.
     tol : float
         Float tolerance.
-
     Returns
     -------
     dic
         Group dictionary.
-
     """
     groups = {}
     for key, item in adict.items():
@@ -381,7 +360,6 @@ def group_keys_by_attributes(adict, names, tol='3f'):
 
 def network_order(start, structure, network):
     """Extract node and element orders from a Network for a given start-point.
-
     Parameters
     ----------
     start : list
@@ -390,7 +368,6 @@ def network_order(start, structure, network):
         Structure object.
     network : obj
         Network object.
-
     Returns
     -------
     list
@@ -401,7 +378,6 @@ def network_order(start, structure, network):
         Cumulative lengths at element mid-points.
     float
         Total length.
-
     """
     gkey_key = network.gkey_key()
     start = gkey_key[geometric_key(start, '{0}f'.format(structure.tol))]
@@ -431,7 +407,6 @@ def network_order(start, structure, network):
 
 def normalise_data(data, cmin, cmax):
     """Normalise a vector of data to between -1 and 1.
-
     Parameters
     ----------
     data : array
@@ -440,14 +415,12 @@ def normalise_data(data, cmin, cmax):
         Cap data values >= cmin.
     cmax : float
         Cap data values <= cmax.
-
     Returns
     -------
     array
         -1 to 1 scaled data.
     float
         The maximum absolute unscaled value.
-
     """
     f = np.asarray(data)
     fmax = cmax if cmax is not None else max(abs(f))
@@ -462,7 +435,6 @@ def normalise_data(data, cmin, cmax):
 
 def postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, ctype, iptype, nodal):
     """Post-process data from analysis results for given step and field.
-
     Parameters
     ----------
     nodes : list
@@ -489,7 +461,6 @@ def postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, ctype, ip
         'mean', 'max' or 'min' of an element's integration point data.
     nodal : str
         'mean', 'max' or 'min' for nodal values.
-
     Returns
     -------
     float
@@ -506,7 +477,6 @@ def postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, ctype, ip
         Element colors.
     float
         Absolute maximum element data value.
-
     """
     tic = time()
 
@@ -578,12 +548,10 @@ def postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, ctype, ip
 
 def principal_stresses(data):
     """ Performs principal stress calculations solving the eigenvalues problem.
-
     Parameters
     ----------
     data : dic
         Element data from structure.results for the Step.
-
     Returns
     -------
     spr: dict
@@ -596,7 +564,6 @@ def principal_stresses(data):
         `section_point` ('sp1, 'sp5').
         {section_point: {stress_type: array([element_0_x, elemnt_1_x, ...],
         [element_0_y, elemnt_1_y, ...])}}
-
     Warnings
     --------
     The function is experimental and works only for shell elements at the moment.

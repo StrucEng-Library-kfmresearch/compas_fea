@@ -21,6 +21,7 @@ __all__ = [
 
 comments = {
     'abaqus':   '**',
+    'anys_sel':   '!',    
     'opensees': '#',
     'sofistik': '$',
     'ansys':    '!',
@@ -47,7 +48,7 @@ class Writer(Steps, Materials, BCs, Sets, Elements, Nodes, Heading):
         self.software = software
         self.structure = structure
         self.fields = fields
-        self.spacer = {'abaqus': ', ', 'opensees': ' ', 'ansys':    ' '}
+        self.spacer = {'abaqus': ', ', 'ansys_sel': ', ', 'opensees': ' ', 'ansys':    ' '}
 
     def __enter__(self):
         self.file = open(self.filename, 'w')

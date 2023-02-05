@@ -15,6 +15,7 @@ __all__ = [
     'ConcreteDamagedPlasticity',
     'ElasticIsotropic',
     'Stiff',
+    'MPCStiff',    
     'ElasticOrthotropic',
     'ElasticPlastic',
     # 'ThermalMaterial',
@@ -111,6 +112,23 @@ class Stiff(ElasticIsotropic):
         ElasticIsotropic.__init__(self, name=name, E=E, v=0.3, p=10**(-1))
 
         self.__name__ = 'Stiff'
+
+class MPCStiff(ElasticIsotropic):
+    """Elastic, very stiff and massless material for MPC
+
+    Parameters
+    ----------
+    name : str
+        Material name.
+    E : float
+        Young's modulus E [Pa].
+
+    """
+
+    def __init__(self, name, E=10**13):
+        ElasticIsotropic.__init__(self, name=name, E=E, v=0.3, p=10**(-1))
+
+        self.__name__ = 'MPCStiff'        
 
 
 class ElasticOrthotropic(Material):

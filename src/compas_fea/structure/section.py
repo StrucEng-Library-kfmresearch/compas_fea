@@ -17,6 +17,7 @@ __all__ = [
     'ISection',
     'PipeSection',
     'RectangularSection',
+    'MPCSection'
     'ShellSection',
     'MembraneSection',
     'SolidSection',
@@ -288,6 +289,28 @@ class RectangularSection(Section):
         self.name = name
         self.geometry = {'b': b, 'h': h, 'A': A, 'J': J, 'Ixx': Ixx, 'Iyy': Iyy, 'Ixy': 0}
 
+class MPCSection(Section):
+    """Section for mpc elements in Ansys
+
+    Parameters
+    ----------
+    name : str
+        Section name.
+    b : float
+        Width.
+    h : float
+        Height.
+
+    """
+    def __init__(self, name):
+        Section.__init__(self, name=name)
+
+        
+        self.__name__ = 'MPCSection'
+        self.name = name
+        self.geometry = None
+
+
 
 class TrapezoidalSection(Section):
     """Solid trapezoidal cross-section for beam elements.
@@ -427,12 +450,19 @@ class ShellSection(Section):
 
     """
 
-    def __init__(self, name, t):
+    def __init__(self, name, t, semi_loc_coords=None):
         Section.__init__(self, name=name)
 
         self.__name__ = 'ShellSection'
         self.name = name
         self.geometry = {'t': t}
+
+        self.loc_coords_OR ={'ORxyz': semi_loc_coords[0]} 
+        self.loc_coords_XA ={'XAxyz': semi_loc_coords[1]} 
+        self.loc_coords_YA ={'YAxyz': semi_loc_coords[2]} 
+        self.loc_coords_EV_XA ={'EV_XA': semi_loc_coords[4]} 
+        self.loc_coords_EV_YA ={'EV_YA': semi_loc_coords[5]} 
+        self.loc_coords_EV_ZA ={'EV_ZA': semi_loc_coords[6]} 
 
 
 class MembraneSection(Section):

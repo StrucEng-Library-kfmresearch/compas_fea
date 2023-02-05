@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 from compas_fea.fea.abaq import abaq
+from compas_fea.fea.ansys_sel import ansys_sel
 from compas_fea.fea.ansys import ansys
 from compas_fea.fea.opensees import opensees
 
@@ -18,6 +19,8 @@ from compas_fea.structure.set import Set
 
 import pickle
 import os
+from datetime import date
+from datetime import datetime
 
 
 # Author(s): Andrew Liew (github.com/andrewliew), Tomas Mendez Echenagucia (github.com/tmsmendez)
@@ -87,6 +90,22 @@ class Structure(ObjectMixins, ElementMixins, NodeMixins):
 
     """
 
+# datetime object containing current date and time
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    print('')
+    print('')
+    print('')
+    print('')        
+    print('-------------------------------------------------------------')
+    print('-------------------------------------------------------------')
+    print('Start new STRUCENG Library Analysis,',dt_string)
+    print('-------------------------------------------------------------')
+    print('-------------------------------------------------------------')
+    print('')
+    print('')
+    print('Translate Rhino file into the Structure object')
+    print('--------------------------------------------------------')
     def __init__(self, path, name='compas_fea-Structure'):
         self.constraints = {}
         self.displacements = {}
@@ -105,6 +124,7 @@ class Structure(ObjectMixins, ElementMixins, NodeMixins):
         self.sections = {}
         self.sets = {}
         self.steps = {}
+        self.loc_coor={}
         self.steps_order = []
         self.tol = '3'
         self.virtual_nodes = {}
@@ -125,6 +145,7 @@ class Structure(ObjectMixins, ElementMixins, NodeMixins):
             self.interactions,
             self.misc,
             self.steps,
+            self.loc_coor,
         ]
 
         d = []
@@ -186,7 +207,11 @@ Steps
 -----
 {}
 
-""".format(self.name, n, m, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
+loc coor
+-----
+{}
+
+""".format(self.name, n, m, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9])
 
     # ==============================================================================
     # Sets
@@ -531,6 +556,9 @@ Steps
         if software == 'abaqus':
             abaq.input_generate(self, fields=fields, output=output)
 
+        elif software == 'ansys_sel':
+            ansys_sel.input_generate(self, fields=fields, output=output)            
+
         elif software == 'ansys':
             ansys.input_generate(self)
 
@@ -564,6 +592,10 @@ Steps
         if software == 'abaqus':
             cpus = 1 if license == 'student' else cpus
             abaq.launch_process(self, exe=exe, cpus=cpus, output=output)
+
+        elif software == 'ansys_sel':
+            cpus = 1 if license == 'student' else cpus
+            ansys_sel.launch_process(self, exe=exe, cpus=cpus, output=output)            
 
         elif software == 'ansys':
             ansys.ansys_launch_process(self.path, self.name, cpus, license, delete=delete)
@@ -605,6 +637,10 @@ Steps
         if software == 'abaqus':
             abaq.extract_data(self, fields=fields, exe=exe, output=output, return_data=return_data,
                               components=components)
+
+        if software == 'ansys_sel':
+            ansys_sel.extract_data(self, fields=fields, exe=exe, output=output, return_data=return_data,
+                              components=components)                              
 
         elif software == 'ansys':
             ansys.extract_rst_data(self, fields=fields, steps=steps, sets=sets, license=license)

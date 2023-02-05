@@ -5,6 +5,7 @@ from __future__ import print_function
 from compas.geometry import centroid_points
 from compas.utilities import geometric_key
 
+from compas_fea.structure.element import MPCElement
 from compas_fea.structure.element import BeamElement
 from compas_fea.structure.element import SpringElement
 from compas_fea.structure.element import TrussElement
@@ -26,6 +27,7 @@ __all__ = [
 ]
 
 func_dict = {
+    'MPCElement':         MPCElement,
     'BeamElement':        BeamElement,
     'SpringElement':      SpringElement,
     'TrussElement':       TrussElement,
@@ -196,6 +198,7 @@ class ElementMixins(object):
             Number of elements stored in the Structure object.
 
         """
+
         return len(self.elements) + len(self.virtual_elements)
 
     def element_centroid(self, element):

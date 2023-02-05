@@ -45,7 +45,6 @@ class NodeMixins(object):
         - Nodes are numbered sequentially starting from 0.
 
         """
-
         xyz = [float(i) for i in xyz]
         key = self.check_node_exists(xyz)
 
