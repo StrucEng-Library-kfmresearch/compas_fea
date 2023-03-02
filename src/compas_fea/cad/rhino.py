@@ -1009,21 +1009,21 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
 
             if n == 2:
                 if source != 'SMM':
-                u, v = nodes
-                sp, ep = U[u], U[v]
-                plane = rs.PlaneFromNormal(sp, subtract_vectors(ep, sp))
-                xa = plane.XAxis
-                ya = plane.YAxis
-                r = radius
-                xa_pr = scale_vector(xa, +r)
-                xa_mr = scale_vector(xa, -r)
-                ya_pr = scale_vector(ya, +r)
-                ya_mr = scale_vector(ya, -r)
-                pts = [add_vectors(sp, xa_pr), add_vectors(sp, ya_pr),
-                       add_vectors(sp, xa_mr), add_vectors(sp, ya_mr),
-                       add_vectors(ep, xa_pr), add_vectors(ep, ya_pr),
-                       add_vectors(ep, xa_mr), add_vectors(ep, ya_mr)]
-                guid = rs.AddMesh(pts, line_faces)
+                    u, v = nodes
+                    sp, ep = U[u], U[v]
+                    plane = rs.PlaneFromNormal(sp, subtract_vectors(ep, sp))
+                    xa = plane.XAxis
+                    ya = plane.YAxis
+                    r = radius
+                    xa_pr = scale_vector(xa, +r)
+                    xa_mr = scale_vector(xa, -r)
+                    ya_pr = scale_vector(ya, +r)
+                    ya_mr = scale_vector(ya, -r)
+                    pts = [add_vectors(sp, xa_pr), add_vectors(sp, ya_pr),
+                        add_vectors(sp, xa_mr), add_vectors(sp, ya_mr),
+                        add_vectors(ep, xa_pr), add_vectors(ep, ya_pr),
+                        add_vectors(ep, xa_mr), add_vectors(ep, ya_mr)]
+                    guid = rs.AddMesh(pts, line_faces)
 
                 if dtype == 'element':
                     col1 = col2 = celements[element]
