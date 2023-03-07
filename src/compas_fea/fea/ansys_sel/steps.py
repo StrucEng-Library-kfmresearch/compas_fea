@@ -190,8 +190,29 @@ class Steps(object):
                                 self.write_line('sfe,all,1,pres,1,{0}'.format(fact * com['z']))
                                 self.write_line('allsel')  
                                 self.blank_line()
+
+                            elif com['x']:
+                                
+                                self.write_line('allsel')  
+                                #self.write_line('cmsel,s, {0}, elem'.format(k))  
+                                self.write_line('esel,s,elem,,{0}'.format(k))  
+                                self.write_line('sfcum,pres,add,,,')
+                                self.write_line('sfe,all,6,pres,1,{0}'.format(fact * com['x']))
+                                self.write_line('allsel')  
+                                self.blank_line()
+                            
+                            elif com['y']:
+                                
+                                self.write_line('allsel')  
+                                #self.write_line('cmsel,s, {0}, elem'.format(k))  
+                                self.write_line('esel,s,elem,,{0}'.format(k))  
+                                self.write_line('sfcum,pres,add,,,')
+                                self.write_line('sfe,all,3,pres,1,{0}'.format(fact * com['y']))
+                                self.write_line('allsel')  
+                                self.blank_line()                                
                             else:
-                                raise NotImplementedError
+                                raise NotImplementedError                                                                
+
 
                     # PointLoads
                     # ----------
