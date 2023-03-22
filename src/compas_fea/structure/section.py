@@ -451,12 +451,13 @@ class ShellSection(Section):
     """
 
     def __init__(self, name, t, semi_loc_coords=None):
+        
         Section.__init__(self, name=name)
 
         self.__name__ = 'ShellSection'
         self.name = name
         self.geometry = {'t': t}
-
+        
         self.loc_coords_OR ={'ORxyz': semi_loc_coords[0]} 
         self.loc_coords_XA ={'XAxyz': semi_loc_coords[1]} 
         self.loc_coords_YA ={'YAxyz': semi_loc_coords[2]} 

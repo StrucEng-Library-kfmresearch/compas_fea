@@ -58,7 +58,7 @@ class Sets(object):
         self.blank_line()
 
         for key in sorted(self.structure.sets):
-
+              
             element_set = self.structure.sets[key]
 
             if element_set.type != 'node':
