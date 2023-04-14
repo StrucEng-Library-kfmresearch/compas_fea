@@ -3,29 +3,12 @@
 cad
 ********************************************************************************
 
+
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 .. currentmodule:: compas_fea.cad
 
-The compas_fea package supports Rhino and Blender in the frontend.
-
-Blender
-=======
-
-.. autosummary::
-    :toctree: generated/
-    :nosignatures:
-
-    add_nodes_elements_from_bmesh
-    add_nodes_elements_from_layers
-    add_nsets_from_layers
-    add_nset_from_meshes
-    add_tets_from_mesh
-    discretise_mesh
-    mesh_extrude
-    plot_concentrated_forces
-    plot_data
-    plot_reaction_forces
-    plot_voxels
-    weld_meshes_from_layer
+The compas_fea package for struceng lib supports Rhino in the frontend.
 
 
 Rhino
@@ -59,37 +42,7 @@ from __future__ import absolute_import
 
 import compas
 
-if compas.BLENDER:
-    from .blender import (  # noqa: F401
-        add_nodes_elements_from_bmesh,
-        add_nodes_elements_from_layers,
-        add_nsets_from_layers,
-        add_nset_from_meshes,
-        add_tets_from_mesh,
-        discretise_mesh,
-        mesh_extrude,
-        plot_concentrated_forces,
-        plot_data,
-        plot_reaction_forces,
-        plot_voxels,
-        weld_meshes_from_layer,
-    )
-    __all__ = [
-        'add_nodes_elements_from_bmesh',
-        'add_nodes_elements_from_layers',
-        'add_nsets_from_layers',
-        'add_nset_from_meshes',
-        'add_tets_from_mesh',
-        'discretise_mesh',
-        'mesh_extrude',
-        'plot_concentrated_forces',
-        'plot_data',
-        'plot_reaction_forces',
-        'plot_voxels',
-        'weld_meshes_from_layer',
-    ]
-
-elif compas.RHINO:
+if compas.RHINO:
     from .rhino import (  # noqa: F401
         add_element_set,
         add_node_set,

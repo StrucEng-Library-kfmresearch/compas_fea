@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 
-# Author(s): Andrew Liew (github.com/andrewliew)
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
 
 
 __all__ = [
@@ -45,38 +45,14 @@ class BCs(object):
                 self.write_subsection(key)
 
                 # ----------------------------------------------------------------------------
-                # OpenSees
-                # ----------------------------------------------------------------------------
-
-                if self.software == 'opensees':
-
-                    entry = ['1' if components[dof] is not None else '0' for dof in dofs[:self.ndof]]
-
-                    for node in sorted(selection, key=int):
-                        self.write_line('fix {0} {1}'.format(node + 1, ' '.join(entry)))
-
-                # ----------------------------------------------------------------------------
-                # Abaqus
-                # ----------------------------------------------------------------------------
-
-                elif self.software == 'abaqus':
-
-                    self.write_line('*BOUNDARY')
-                    self.blank_line()
-
-                    for c, dof in enumerate(dofs, 1):
-                        if components[dof] is not None:
-                            if nset:
-                                self.write_line('{0}, {1}, {1}, {2}'.format(nset, c, components[dof]))
-                            else:
-                                for node in sorted(selection, key=int):
-                                    self.write_line('{0}, {1}, {1}, {2}'.format(node + 1, c, components[dof]))
-
-                # ----------------------------------------------------------------------------
                 # Ansys
                 # ----------------------------------------------------------------------------
 
-                elif self.software == 'ansys':
+                if self.software == 'ansys':
+
+                    pass
+
+                else:
 
                     pass
 

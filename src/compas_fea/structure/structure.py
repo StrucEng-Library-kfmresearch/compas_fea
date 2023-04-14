@@ -530,7 +530,7 @@ loc coor
     # Analysis
     # ==============================================================================
 
-    def write_input_file(self, software, fields='u', output=True, save=False, ndof=6):
+    def write_input_file(self, software, fields='u', output=True, save=False, ndof=6, lstep = 'last', sbstep = 'last'):
         """Writes the FE software's input file.
 
         Parameters
@@ -557,7 +557,7 @@ loc coor
             abaq.input_generate(self, fields=fields, output=output)
 
         elif software == 'ansys_sel':
-            ansys_sel.input_generate(self, fields=fields, output=output)            
+            ansys_sel.input_generate(self, fields=fields, output=output, lstep = lstep, sbstep=sbstep)            
 
         elif software == 'ansys':
             ansys.input_generate(self)
@@ -649,7 +649,7 @@ loc coor
             opensees.extract_data(self, fields=fields)
 
     def analyse_and_extract(self, software, fields='u', exe=None, cpus=4, license='research', output=True, save=False,
-                            return_data=True, components=None, ndof=6):
+                            return_data=True, components=None, ndof=6, lstep = 'last', sbstep = 'last'):
         """Runs the analysis through the chosen FEA software / library and extracts data.
 
         Parameters
@@ -672,6 +672,8 @@ loc coor
             Return data back into structure.results.
         components : list
             Specific components to extract from the fields data.
+        step : list
+            For which load step(s) the results are extracted to a txt.
 
         Returns
         -------
@@ -679,7 +681,7 @@ loc coor
 
         """
 
-        self.write_input_file(software=software, fields=fields, output=output, save=save, ndof=ndof)
+        self.write_input_file(software=software, fields=fields, output=output, save=save, ndof=ndof, lstep=lstep, sbstep=sbstep)
 
         self.analyse(software=software, exe=exe, cpus=cpus, license=license, output=output)
 

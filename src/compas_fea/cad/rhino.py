@@ -34,6 +34,7 @@ else:
 if compas.RHINO:
     import rhinoscriptsyntax as rs
 
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
 
 __all__ = [
     'add_element_set',
@@ -845,7 +846,7 @@ def plot_axes(xyz, e11, e22, e33, layer, sc=1):
     rs.ObjectLayer(ez, layer)
 
 
-def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, cbar=[None, None], iptype='mean',
+def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, cbar=[None, None], iptype='mean',
               nodal='mean', mode='', cbar_size=1, source=None):
     """
     Plots analysis results on the deformed shape of the Structure.
@@ -854,8 +855,8 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
     ----------
     structure : obj
         Structure object.
-    step : str
-        Name of the Step.
+    lstep, step : str
+        Name of the time Step.
     field : str
         Field to plot, e.g. 'um', 'sxx', 'sm1'.
     layer : str
@@ -874,6 +875,8 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
         Mode or frequency number to plot, for modal, harmonic or buckling analysis.
     cbar_size : float
         Scale on the size of the colorbar.
+    source : float
+        description of the used model
 
     Returns
     -------
@@ -884,7 +887,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
     - Pipe visualisation of line elements is not based on the element section.
 
     """
-
+    step=lstep
     tic=time()
     if field in ['smaxp', 'smises']:
         nodal = 'max'
@@ -893,74 +896,75 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
     elif field in ['sminp']:
         nodal = 'min'
         iptype = 'min'
-
+    
     # Create and clear Rhino layer
 
     if not layer:
-        if field=='ux':
-            name='(global x-displacements)'
-        elif field == 'uy':
-            name='(global y-displacements)'
-        elif field == 'uz':
-            name='(global z-displacements)'
-        elif field == 'um':
-            name='(global magnitue-displacements)'
-        elif field == 'sf1':
-            name='(membrane forces in local x-direction)'
-        elif field == 'sf2':
-            name='(membrane forces in local y-direction)'
-        elif field == 'sf3':
-            name='(shear forces in local xy-direction)'
-        elif field == 'sf4':
-            name='(transverse shear forces on local x-plane)'
-        elif field == 'sf5':
-            name='(transverse shear forces on local y-plane)'
-        elif field == 'sm1':
-            name='(bending moments around local y-direction)'
-        elif field == 'sm2':
-            name='(bending moments around local x-direction)'
-        elif field == 'sm3':
-            name='(twisting moments in x- and y-directions)'   
-        elif field == 'as_xi_bot':
-            name='(amount of reinf. at bottom cover (local z-direction is positiv) in local xi-direction [mm^2/m])'              
-        elif field == 'as_xi_top':
-            name='(amount of reinf. at top cover (local z-direction is negativ) in local xi-direction [mm^2/m])'    
-        elif field == 'as_eta_bot':
-            name='(amount of reinf. at bottom cover (local z-direction is positiv) in local eta-direction [mm^2/m])'    
-        elif field == 'as_eta_top':
-            name='(amount of reinf. at top cover (local z-direction is negativ) in local eta-direction [mm^2/m])'    
-        elif field == 'as_z':
-            name='(amount of reinf. at in local z-direction [mm^2/m])'    
-        elif field == 'CC_bot':
-            name='(values for concrete failure bottom cover (local z-direction is positiv): 0=no failure, 1=failure but in iteration, 2=failure)'    
-        elif field == 'CC_top':
-            name='(values for concrete failure top cover (local z-direction is negativ): 0=no failure, 1=failure but in iteration, 2=failure)'    
-        elif field == 'k_bot':
-            name='(k-factor of the sandwichmodel bottom cover (local z-direction is positiv))'    
-        elif field == 'k_top':
-            name='(k-factor of the sandwichmodel top cover (local z-direction is negativ))'    
-        elif field == 't_bot':
-            name='(thickness of the sandwich cover bottom cover (local z-direction is positiv))'    
-        elif field == 't_top':
-            name='(thickness of the sandwich cover top cover (local z-direction is negativ))' 
-        elif field == 'psi_bot':
-            name='(angle between reinforcement directions xi and eta bottom cover (local z-direction is positiv))'    
-        elif field == 'psi_top':
-            name='(angle between reinforcement directions xi and eta top cover (local z-direction is negativ))'    
-        elif field == 'Fall_bot':
-            name='(case sandwichmodel cover bottom cover (local z-direction is positiv))'    
-        elif field == 'Fall_top':
-            name='(case sandwichmodel cover top cover (local z-direction is negativ))'    
-        elif field == 'm_cc_bot':
-            name='(degree of utilization for concrete failure bottom cover (local z-direction is positiv))'    
-        elif field == 'm_cc_top':
-            name='(degree of utilization for concrete failure top cover (local z-direction is negativ))'    
-        elif field == 'm_shear_c':
-            name='(degree of utilization for concrete core)'        
-        elif field == 'm_c_total':
-            name='(max degree of utilization for concrete)'                            
-        else:
-            name='(no description available'      
+        if source == 'linel':
+            if field=='ux':
+                name='(global x-displacements, source=linel)'            
+            elif field == 'uy':
+                name='(global y-displacements, source=linel)'
+            elif field == 'uz':
+                name='(global z-displacements, source=linel)'
+            elif field == 'um':
+                name='(global magnitue-displacements, source=linel)'
+            elif field == 'sf1':
+                name='(membrane forces in local x-direction, source=linel)'
+            elif field == 'sf2':
+                name='(membrane forces in local y-direction, source=linel)'
+            elif field == 'sf3':
+                name='(shear forces in local xy-direction, source=linel)'
+            elif field == 'sf4':
+                name='(transverse shear forces on local x-plane, source=linel)'
+            elif field == 'sf5':
+                name='(transverse shear forces on local y-plane, source=linel)'
+            elif field == 'sm1':
+                name='(bending moments around local y-direction, source=linel)'
+            elif field == 'sm2':
+                name='(bending moments around local x-direction, source=linel)'
+            elif field == 'sm3':
+                name='(twisting moments in x- and y-directions, source=linel)'   
+            
+        if source == 'SMM':
+            if field == 'as_xi_bot':
+                name='(amount of reinf. at bottom cover (local z-direction is positiv) in local xi-direction [mm^2/m], source=SMM)'              
+            elif field == 'as_xi_top':
+                name='(amount of reinf. at top cover (local z-direction is negativ) in local xi-direction [mm^2/m], source=SMM)'    
+            elif field == 'as_eta_bot':
+                name='(amount of reinf. at bottom cover (local z-direction is positiv) in local eta-direction [mm^2/m], source=SMM)'    
+            elif field == 'as_eta_top':
+                name='(amount of reinf. at top cover (local z-direction is negativ) in local eta-direction [mm^2/m], source=SMM)'    
+            elif field == 'as_z':
+                name='(amount of reinf. at in local z-direction [mm^2/m], source=SMM)'    
+            elif field == 'CC_bot':
+                name='(values for concrete failure bottom cover (local z-direction is positiv): 0=no failure, 1=failure but in iteration, 2=failure, source=SMM)'    
+            elif field == 'CC_top':
+                name='(values for concrete failure top cover (local z-direction is negativ): 0=no failure, 1=failure but in iteration, 2=failure, source=SMM)'    
+            elif field == 'k_bot':
+                name='(k-factor of the sandwichmodel bottom cover (local z-direction is positiv), source=SMM)'    
+            elif field == 'k_top':
+                name='(k-factor of the sandwichmodel top cover (local z-direction is negativ), source=SMM)'    
+            elif field == 't_bot':
+                name='(thickness of the sandwich cover bottom cover (local z-direction is positiv), source=SMM)'    
+            elif field == 't_top':
+                name='(thickness of the sandwich cover top cover (local z-direction is negativ), source=SMM)' 
+            elif field == 'psi_bot':
+                name='(angle between reinforcement directions xi and eta bottom cover (local z-direction is positiv), source=SMM)'    
+            elif field == 'psi_top':
+                name='(angle between reinforcement directions xi and eta top cover (local z-direction is negativ), source=SMM)'    
+            elif field == 'Fall_bot':
+                name='(case sandwichmodel cover bottom cover (local z-direction is positiv), source=SMM)'    
+            elif field == 'Fall_top':
+                name='(case sandwichmodel cover top cover (local z-direction is negativ), source=SMM)'    
+            elif field == 'm_cc_bot':
+                name='(degree of utilization for concrete failure bottom cover (local z-direction is positiv), source=SMM)'    
+            elif field == 'm_cc_top':
+                name='(degree of utilization for concrete failure top cover (local z-direction is negativ), source=SMM)'    
+            elif field == 'm_shear_c':
+                name='(degree of utilization for concrete core, source=SMM)'        
+            elif field == 'm_c_total':
+                name='(max degree of utilization for concrete, source=SMM)'                              
 
         layer = '{0}-{1}-{3}{2}'.format(step, field, mode,name)
 
@@ -986,6 +990,7 @@ def plot_data(structure, step, field='um', layer=None, scale=1.0, radius=0.05, c
 
     except(Exception):
         data = structure.results[step]['element'][field]
+        print(data)
         dtype = 'element'
 
     # Postprocess

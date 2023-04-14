@@ -64,39 +64,8 @@ class Steps(object):
             # HEADER
             # =====================================================================================================
             # =====================================================================================================
-
-            if stype in ['GeneralStep', 'BucklingStep', 'ModalStep']:
-
-                self.write_subsection(key)
-
-                # -------------------------------------------------------------------------------------------------
-                # Ansys
-                # -------------------------------------------------------------------------------------------------
-
-
-                if stype == 'ModalStep':
-
-                    raise NotImplementedError
-
-                else:
-
-                    p = ', PERTURBATION' if stype == 'BucklingStep' else ''
-                    self.write_line('/solu')
-                    self.write_line('cnvtol,F,,0.9')
-                    self.write_line('cnvtol,U,,0.9')
-                    self.write_line('cnvtol,M,-1,3')
-                    self.write_line('autots,1')
-                    self.write_line('nsubst,{0},{0},{0}'.format(increments))
-                    ansys_step=re.sub('step_','',key)
-                    ansys_step_string=int(ansys_step)-1
-                    self.write_line('time, {0}'.format(ansys_step_string))
-                    self.write_line('Nropt,Full,,on')
-                    self.write_line('NLGEOM,off')
-
-                    if stype == 'BucklingStep':
-                        raise NotImplementedError
-
-                self.blank_line()
+            self.write_subsection(key)
+                
 
 
             # =====================================================================================================
@@ -294,6 +263,36 @@ class Steps(object):
                             self.write_line('*INITIAL CONDITIONS, TYPE=STRESS')
                             self.blank_line()
                             self.write_line('{0}, {1}'.format(k, stresses))
+
+            # -------------------------------------------------------------------------------------------------
+            # Ansys Solver Block
+            # -------------------------------------------------------------------------------------------------
+
+            if stype in ['GeneralStep', 'BucklingStep', 'ModalStep']:
+
+                if stype == 'ModalStep':
+
+                    raise NotImplementedError
+
+                else:
+
+                    p = ', PERTURBATION' if stype == 'BucklingStep' else ''
+                    self.write_line('/solu')
+                    self.write_line('cnvtol,F,,0.9')
+                    self.write_line('cnvtol,U,,0.9')
+                    self.write_line('cnvtol,M,-1,3')
+                    self.write_line('autots,1')
+                    self.write_line('nsubst,{0},{0},{0}'.format(increments))
+                    ansys_step=re.sub('step_','',key)
+                    ansys_step_string=int(ansys_step)-1
+                    self.write_line('time, {0}'.format(ansys_step_string))
+                    self.write_line('Nropt,Full,,on')
+                    self.write_line('NLGEOM,off')
+
+                    if stype == 'BucklingStep':
+                        raise NotImplementedError
+
+                self.blank_line()
 
                 self.blank_line()
                 self.blank_line()

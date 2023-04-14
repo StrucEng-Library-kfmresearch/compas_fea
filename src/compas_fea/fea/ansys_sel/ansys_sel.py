@@ -34,7 +34,7 @@ element_fields = ['sf', 'sm', 'sk', 'se', 's', 'e', 'pe', 'rbfor', 'ctf']
 # -------------------------------------------------------------------------
 # Generates the APDL (.inp) file based on the strucutre object
 # -------------------------------------------------------------------------
-def input_generate(structure, fields, output):
+def input_generate(structure, fields, output, lstep, sbstep):
     """ Creates the Ansys .inp file from the Structure object.
 
     Parameters
@@ -51,7 +51,7 @@ def input_generate(structure, fields, output):
     None
 
     """
-    
+
     filename = '{0}{1}.inp'.format(structure.path, structure.name)
     print('')
     print('')
@@ -73,7 +73,7 @@ def input_generate(structure, fields, output):
         writer.write_materials() # Writes materials in the .inp (APDL) file
         writer.write_boundary_conditions() # Writes boundary conditions in the .inp (APDL) file        
         writer.write_steps() # Writes steps/solver in the .inp (APDL) file
-        writer.write_results(structure,fields) # Writes results in the .inp (APDL) file
+        writer.write_results(structure,fields, lstep, sbstep) # Writes results in the .inp (APDL) file
     if output:
         toc = time() - tic
         print('Ansys MAPDL input file successfull generated in {0:.3f} s'.format(toc))
@@ -212,6 +212,7 @@ def extract_data(structure, fields, exe, output, return_data, components):
                 # Displacements at nodes (node fields)
                 if 'u' in fields or 'all' in fields:
                     filename = step + '_displacements.txt'
+                    
                     try:
                         dfile = open(os.path.join(out_path, filename), 'r')
                     except(Exception):
@@ -275,9 +276,12 @@ def extract_data(structure, fields, exe, output, return_data, components):
                         structure.results[step]['nodal'][key] = rdict[key] 
 
             # element results results
+
             structure.results[step]['element'] = {}
             structure.results[step]['element'].update(result_data[step]['element'])
+            
             
             toc = time() - tic
             print('Saving Ansys MAPDL results to the structure object successful in {0:.3f} s'.format(toc))
             
+        

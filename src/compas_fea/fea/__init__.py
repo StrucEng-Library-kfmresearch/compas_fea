@@ -5,7 +5,7 @@ fea
 
 .. currentmodule:: compas_fea.fea
 
-The compas_fea package supports Abaqus, Ansys, Sofistik and OpenSees as analysis backends.
+The compas_fea package with struceng lib supports Ansys as analysis backends.
 
 
 Classes
@@ -19,18 +19,6 @@ Classes
 
 Backends
 ========
-
-abaq
-----
-
-.. currentmodule:: compas_fea.fea.abaq
-
-.. autosummary::
-    :toctree: generated/
-
-    input_generate
-    extract_data
-    launch_process
 
 
 ansys
@@ -53,22 +41,12 @@ ansys
     load_to_results
 
 
-opensees
---------
-
-.. currentmodule:: compas_fea.fea.opensees
-
-.. autosummary::
-    :toctree: generated/
-
-    input_generate
-    extract_data
-    launch_process
-
 """
 from __future__ import absolute_import
 
 from .writer import Writer
+
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
 
 __all__ = [
     'Writer'
