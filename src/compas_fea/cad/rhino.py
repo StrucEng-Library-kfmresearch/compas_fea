@@ -765,7 +765,7 @@ def plot_mode_shapes(structure, step, layer=None, scale=1.0, radius=1):
 
     elif isinstance(it, dict):
         for mode, value in it.items():
-            print(mode, value)
+            #print(mode, value)
             layerk = layer + str(mode)
             plot_data(structure=structure, step=step, field='um', layer=layerk, scale=scale, mode=mode, radius=radius, source=None)
 
@@ -930,39 +930,39 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
             
         if source == 'SMM':
             if field == 'as_xi_bot':
-                name='(amount of reinf. at bottom cover (local z-direction is positiv) in local xi-direction [mm^2/m], source=SMM)'              
+                name='(amount of reinf. at bottom cover (local z-value is positiv) in local xi-direction [mm^2/m], source=SMM)'              
             elif field == 'as_xi_top':
-                name='(amount of reinf. at top cover (local z-direction is negativ) in local xi-direction [mm^2/m], source=SMM)'    
+                name='(amount of reinf. at top cover (local z-value is negativ) in local xi-direction [mm^2/m], source=SMM)'    
             elif field == 'as_eta_bot':
-                name='(amount of reinf. at bottom cover (local z-direction is positiv) in local eta-direction [mm^2/m], source=SMM)'    
+                name='(amount of reinf. at bottom cover (local z-value is positiv) in local eta-direction [mm^2/m], source=SMM)'    
             elif field == 'as_eta_top':
-                name='(amount of reinf. at top cover (local z-direction is negativ) in local eta-direction [mm^2/m], source=SMM)'    
+                name='(amount of reinf. at top cover (local z-value is negativ) in local eta-direction [mm^2/m], source=SMM)'    
             elif field == 'as_z':
-                name='(amount of reinf. at in local z-direction [mm^2/m], source=SMM)'    
+                name='(amount of reinf. at in local z-value [mm^2/m], source=SMM)'    
             elif field == 'CC_bot':
-                name='(values for concrete failure bottom cover (local z-direction is positiv): 0=no failure, 1=failure but in iteration, 2=failure, source=SMM)'    
+                name='(values for concrete failure bottom cover (local z-value is positiv): 0=no failure, 1=failure but in iteration, 2=failure, source=SMM)'    
             elif field == 'CC_top':
-                name='(values for concrete failure top cover (local z-direction is negativ): 0=no failure, 1=failure but in iteration, 2=failure, source=SMM)'    
+                name='(values for concrete failure top cover (local z-value is negativ): 0=no failure, 1=failure but in iteration, 2=failure, source=SMM)'    
             elif field == 'k_bot':
-                name='(k-factor of the sandwichmodel bottom cover (local z-direction is positiv), source=SMM)'    
+                name='(k-factor of the sandwichmodel bottom cover (local z-value is positiv), source=SMM)'    
             elif field == 'k_top':
-                name='(k-factor of the sandwichmodel top cover (local z-direction is negativ), source=SMM)'    
+                name='(k-factor of the sandwichmodel top cover (local z-value is negativ), source=SMM)'    
             elif field == 't_bot':
-                name='(thickness of the sandwich cover bottom cover (local z-direction is positiv), source=SMM)'    
+                name='(thickness of the sandwich cover bottom cover (local z-value is positiv), source=SMM)'    
             elif field == 't_top':
                 name='(thickness of the sandwich cover top cover (local z-direction is negativ), source=SMM)' 
             elif field == 'psi_bot':
-                name='(angle between reinforcement directions xi and eta bottom cover (local z-direction is positiv), source=SMM)'    
+                name='(angle between reinforcement directions xi and eta bottom cover (local z-value is positiv), source=SMM)'    
             elif field == 'psi_top':
-                name='(angle between reinforcement directions xi and eta top cover (local z-direction is negativ), source=SMM)'    
+                name='(angle between reinforcement directions xi and eta top cover (local z-value is negativ), source=SMM)'    
             elif field == 'Fall_bot':
-                name='(case sandwichmodel cover bottom cover (local z-direction is positiv), source=SMM)'    
+                name='(case sandwichmodel cover bottom cover (local z-value is positiv), source=SMM)'    
             elif field == 'Fall_top':
-                name='(case sandwichmodel cover top cover (local z-direction is negativ), source=SMM)'    
+                name='(case sandwichmodel cover top cover (local z-value is negativ), source=SMM)'    
             elif field == 'm_cc_bot':
-                name='(degree of utilization for concrete failure bottom cover (local z-direction is positiv), source=SMM)'    
+                name='(degree of utilization for concrete failure bottom cover (local z-value is positiv), source=SMM)'    
             elif field == 'm_cc_top':
-                name='(degree of utilization for concrete failure top cover (local z-direction is negativ), source=SMM)'    
+                name='(degree of utilization for concrete failure top cover (local z-value is negativ), source=SMM)'    
             elif field == 'm_shear_c':
                 name='(degree of utilization for concrete core, source=SMM)'        
             elif field == 'm_c_total':
@@ -988,15 +988,17 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
 
     try:
         data = [nodal_data['{0}{1}'.format(field, mode)][i] for i in nkeys]
-        dtype = 'nodal'
+        dtype = 'nodal'        
 
     except(Exception):
         data = structure.results[step]['element'][field]
-        print(data)
+        #print(data)
         dtype = 'element'
 
-    # Postprocess
 
+
+    # Postprocess
+    
     result = functions.postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, 255, iptype, nodal)
 
     try:
@@ -1011,33 +1013,33 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
         tet_faces = [[0, 2, 1, 1], [1, 2, 3, 3], [1, 3, 0, 0], [0, 3, 2, 2]]
 
         for element, nodes in enumerate(elements):
-
+                        
             n = len(nodes)
-
+            
             if n == 2:
-                if source != 'SMM':
-                    u, v = nodes
-                    sp, ep = U[u], U[v]
-                    plane = rs.PlaneFromNormal(sp, subtract_vectors(ep, sp))
-                    xa = plane.XAxis
-                    ya = plane.YAxis
-                    r = radius
-                    xa_pr = scale_vector(xa, +r)
-                    xa_mr = scale_vector(xa, -r)
-                    ya_pr = scale_vector(ya, +r)
-                    ya_mr = scale_vector(ya, -r)
-                    pts = [add_vectors(sp, xa_pr), add_vectors(sp, ya_pr),
-                        add_vectors(sp, xa_mr), add_vectors(sp, ya_mr),
-                        add_vectors(ep, xa_pr), add_vectors(ep, ya_pr),
-                        add_vectors(ep, xa_mr), add_vectors(ep, ya_mr)]
-                    guid = rs.AddMesh(pts, line_faces)
+                #if source != 'SMM':
+                u, v = nodes
+                sp, ep = U[u], U[v]
+                plane = rs.PlaneFromNormal(sp, subtract_vectors(ep, sp))
+                xa = plane.XAxis
+                ya = plane.YAxis
+                r = radius
+                xa_pr = scale_vector(xa, +r)
+                xa_mr = scale_vector(xa, -r)
+                ya_pr = scale_vector(ya, +r)
+                ya_mr = scale_vector(ya, -r)
+                pts = [add_vectors(sp, xa_pr), add_vectors(sp, ya_pr),
+                    add_vectors(sp, xa_mr), add_vectors(sp, ya_mr),
+                    add_vectors(ep, xa_pr), add_vectors(ep, ya_pr),
+                    add_vectors(ep, xa_mr), add_vectors(ep, ya_mr)]
+                guid = rs.AddMesh(pts, line_faces)
 
-                    if dtype == 'element':
-                        col1 = col2 = celements[element]
-
-                    elif dtype == 'nodal':
-                        col1 = cnodes[u]
-                        col2 = cnodes[v]
+                if dtype == 'element':
+                    col1 = col2 = celements[element]
+                    
+                elif dtype == 'nodal':
+                    col1 = cnodes[u]
+                    col2 = cnodes[v]
 
                 rs.MeshVertexColors(guid, [col1] * 4 + [col2] * 4)
 

@@ -58,8 +58,11 @@ class Results(object):
             # Loschen der Dateien in Output Pfad
             out_path = os.path.join(path, name + '_output')
             dir = out_path
-            for f in os.listdir(dir):
-                os.remove(os.path.join(dir, f))
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+            else:
+                for f in os.listdir(dir):
+                    os.remove(os.path.join(dir, f))
     
 
             filename = name + '_extract.txt'
