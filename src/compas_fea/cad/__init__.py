@@ -1,10 +1,11 @@
 """
+
 ********************************************************************************
 cad
 ********************************************************************************
 
 
-# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 
 .. currentmodule:: compas_fea.cad
 
@@ -38,6 +39,9 @@ Rhino
     weld_meshes_from_layer
 
 """
+
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 from __future__ import absolute_import
 
 import compas

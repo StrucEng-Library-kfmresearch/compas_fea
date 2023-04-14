@@ -1,17 +1,19 @@
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from compas_fea.fea.heading import Heading
-from compas_fea.fea.nodes import Nodes
-from compas_fea.fea.elements import Elements
-from compas_fea.fea.sets import Sets
-from compas_fea.fea.bcs import BCs
-from compas_fea.fea.materials import Materials
-from compas_fea.fea.steps import Steps
+from compas_fea.fea.ansys_sel.heading import Heading
+from compas_fea.fea.ansys_sel.nodes import Nodes
+from compas_fea.fea.ansys_sel.elements import Elements
+from compas_fea.fea.ansys_sel.sets import Sets
+from compas_fea.fea.ansys_sel.bcs import BCs
+from compas_fea.fea.ansys_sel.materials import Materials
+from compas_fea.fea.ansys_sel.steps import Steps
 
 
-# Author(s): Andrew Liew (github.com/andrewliew)
+
 
 
 __all__ = [
@@ -20,11 +22,7 @@ __all__ = [
 
 
 comments = {
-    'abaqus':   '**',
     'anys_sel':   '!',    
-    'opensees': '#',
-    'sofistik': '$',
-    'ansys':    '!',
 }
 
 
@@ -48,7 +46,7 @@ class Writer(Steps, Materials, BCs, Sets, Elements, Nodes, Heading):
         self.software = software
         self.structure = structure
         self.fields = fields
-        self.spacer = {'abaqus': ', ', 'ansys_sel': ', ', 'opensees': ' ', 'ansys':    ' '}
+        self.spacer = {'ansys_sel': ', '}
 
     def __enter__(self):
         self.file = open(self.filename, 'w')

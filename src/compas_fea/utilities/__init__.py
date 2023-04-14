@@ -39,6 +39,10 @@ meshing
     tets_from_vertices_faces
 
 """
+
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
+
 from __future__ import absolute_import
 
 from .functions import (

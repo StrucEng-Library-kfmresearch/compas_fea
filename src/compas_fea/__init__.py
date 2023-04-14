@@ -15,6 +15,8 @@ compas_fea
     compas_fea.utilities
 
 """
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 from __future__ import print_function
 
 import os

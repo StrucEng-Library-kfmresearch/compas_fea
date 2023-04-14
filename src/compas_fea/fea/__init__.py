@@ -42,11 +42,13 @@ ansys
 
 
 """
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 from __future__ import absolute_import
 
 from .writer import Writer
 
-# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 
 __all__ = [
     'Writer'

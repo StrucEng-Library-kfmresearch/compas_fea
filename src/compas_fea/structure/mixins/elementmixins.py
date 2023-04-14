@@ -1,3 +1,5 @@
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,7 +22,7 @@ from compas_fea.structure.element import PentahedronElement
 from compas_fea.structure.element import HexahedronElement
 from compas_fea.structure.element import MassElement
 
-# Author(s): Andrew Liew (github.com/andrewliew), Tomas Mendez Echenagucia (github.com/tmsmendez)
+
 
 __all__ = [
     'ElementMixins',

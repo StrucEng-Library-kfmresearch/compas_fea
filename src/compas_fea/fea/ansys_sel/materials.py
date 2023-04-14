@@ -1,9 +1,9 @@
+# Author(s): Andrew Liew (github.com/andrewliew), Marius Weber (IBK, ETHZ)
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
-# Author(s): Andrew Liew (github.com/andrewliew)
 
 
 __all__ = [

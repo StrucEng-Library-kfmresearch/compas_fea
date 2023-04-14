@@ -1,11 +1,12 @@
+# Author(s): Compas/Compas FEA Team, Marius  Weber (ETHZ, HSLU T&A)
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from compas_fea.fea.abaq import abaq
+
 from compas_fea.fea.ansys_sel import ansys_sel
-from compas_fea.fea.ansys import ansys
-from compas_fea.fea.opensees import opensees
+
 
 # from compas_fea.utilities import combine_all_sets
 # from compas_fea.utilities import group_keys_by_attribute
@@ -22,8 +23,6 @@ import os
 from datetime import date
 from datetime import datetime
 
-
-# Author(s): Andrew Liew (github.com/andrewliew), Tomas Mendez Echenagucia (github.com/tmsmendez)
 
 
 __all__ = [
@@ -536,7 +535,7 @@ loc coor
         Parameters
         ----------
         software : str
-            Analysis software / library to use, 'abaqus', 'opensees', or 'ansys'.
+            Analysis software / library to use, only 'ansys' is supported.
         fields : list, str
             Data field requests.
         output : bool
@@ -553,17 +552,13 @@ loc coor
         if save:
             self.save_to_obj()
 
-        if software == 'abaqus':
-            abaq.input_generate(self, fields=fields, output=output)
-
-        elif software == 'ansys_sel':
+        if software == 'ansys_sel':
+            
             ansys_sel.input_generate(self, fields=fields, output=output, lstep = lstep, sbstep=sbstep)            
 
-        elif software == 'ansys':
-            ansys.input_generate(self)
+        else: 
+            raise NotImplementedError
 
-        elif software == 'opensees':
-            opensees.input_generate(self, fields=fields, output=output, ndof=ndof)
 
     def analyse(self, software, exe=None, cpus=4, license='research', delete=True, output=True):
         """Runs the analysis through the chosen FEA software / library.
@@ -571,7 +566,7 @@ loc coor
         Parameters
         ----------
         software : str
-            Analysis software / library to use, 'abaqus', 'opensees' or 'ansys'.
+            Analysis software / library to use, only ansys'.
         exe : str
             Full terminal command to bypass subprocess defaults.
         cpus : int
@@ -589,20 +584,14 @@ loc coor
 
         """
 
-        if software == 'abaqus':
-            cpus = 1 if license == 'student' else cpus
-            abaq.launch_process(self, exe=exe, cpus=cpus, output=output)
 
-        elif software == 'ansys_sel':
+        if software == 'ansys_sel':
             cpus = 1 if license == 'student' else cpus
             ansys_sel.launch_process(self, exe=exe, cpus=cpus, output=output)            
 
-        elif software == 'ansys':
-            ansys.ansys_launch_process(self.path, self.name, cpus, license, delete=delete)
-
-        elif software == 'opensees':
-            opensees.launch_process(self, exe=exe, output=output)
-
+        else:
+            raise NotImplementedError
+        
     def extract_data(self, software, fields='u', steps='all', exe=None, sets=None, license='research', output=True,
                      return_data=True, components=None):
         """Extracts data from the analysis output files.
@@ -610,7 +599,7 @@ loc coor
         Parameters
         ----------
         software : str
-            Analysis software / library to use, 'abaqus', 'opensees' or 'ansys'.
+            Analysis software / library to use, only 'ansys'.
         fields : list, str
             Data field requests.
         steps : list
@@ -634,19 +623,13 @@ loc coor
 
         """
 
-        if software == 'abaqus':
-            abaq.extract_data(self, fields=fields, exe=exe, output=output, return_data=return_data,
-                              components=components)
 
         if software == 'ansys_sel':
             ansys_sel.extract_data(self, fields=fields, exe=exe, output=output, return_data=return_data,
                               components=components)                              
 
-        elif software == 'ansys':
-            ansys.extract_rst_data(self, fields=fields, steps=steps, sets=sets, license=license)
-
-        elif software == 'opensees':
-            opensees.extract_data(self, fields=fields)
+        else:
+            raise NotImplementedError
 
     def analyse_and_extract(self, software, fields='u', exe=None, cpus=4, license='research', output=True, save=False,
                             return_data=True, components=None, ndof=6, lstep = 'last', sbstep = 'last'):
@@ -655,7 +638,7 @@ loc coor
         Parameters
         ----------
         software : str
-            Analysis software / library to use, 'abaqus', 'opensees' or 'ansys'.
+            Analysis software / library to use, only 'ansys'.
         fields : list, str
             Data field requests.
         exe : str
