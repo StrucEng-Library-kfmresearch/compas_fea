@@ -64,7 +64,8 @@ class Elements(object):
             section = sections[property.section]
             stype = section.__name__
             geometry = section.geometry
-            
+            nr_layers = section.nr_layers
+
             if geometry is not None:
                 loc_coor_OR= section.loc_coords_OR
                 loc_coor_XA= section.loc_coords_XA
@@ -82,6 +83,8 @@ class Elements(object):
             if geometry is not None:
     
                 t = geometry.get('t', None) 
+                nn = nr_layers.get('nn', None) 
+                
                 ORxyz = loc_coor_OR.get('ORxyz', None)
                 XAxyz = loc_coor_XA.get('XAxyz', None)
                 YAxyz = loc_coor_YA.get('YAxyz', None)                    

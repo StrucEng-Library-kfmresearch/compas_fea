@@ -19,7 +19,8 @@ __all__ = [
     'ElasticOrthotropic',
     'ElasticPlastic',
     # 'ThermalMaterial',
-    'Steel'
+    'Steel',
+    'CMMUsermat'
 ]
 
 
@@ -465,3 +466,121 @@ class ThermalMaterial(Material):
         self.p = p
         self.sheat = sheat
         self.attr_list.extend(['p', 'conductivity', 'sheat'])
+
+# ==============================================================================
+# convetional CMM Usermat
+# ==============================================================================
+
+class CMMUsermat(Material):
+    """Elastic, isotropic and homogeneous material.
+
+    Parameters
+    ----------
+    name : str
+        Material name.
+    E : float
+        Young's modulus E [Pa].
+    v : float
+        Poisson's ratio v [-].
+    p : float
+        Density [kg/m3].
+    tension : bool
+        Can take tension.
+    compression : bool
+        Can take compression.
+
+    """
+
+    def __init__(self, name, geo, concrete, reinf_1L, reinf_2L, reinf_3L, reinf_4L):
+        Material.__init__(self, name=name)
+
+        self.__name__ = 'CMMUsermat'
+        self.name = name
+
+        # Delete nur als workflow test jetzt noch drin
+        self.E = {'E': 200000}
+        self.v = {'v': 0.1}
+        self.G = {'G': 0.5 * 200000 / (1 + 0.1)}
+        self.p = 0.0000025
+
+        # Schlussendlich mit diesen werten
+        self.R_Rohr = {'R_Rohr': geo['R_Rohr'] }
+        self.rho = {'rho': geo['rho'] }    
+        self.oo = {'oo': geo['oo'] }    
+        self.uu = {'uu': geo['uu'] }    
+        
+        self.beton = {'beton': concrete['beton'] }    
+        self.fcc = {'fcc': concrete['fcc'] }    
+        self.vc = {'vc': concrete['vc'] }    
+        self.ecu = {'ecu': concrete['ecu'] }    
+        self.k_E = {'k_E': concrete['k_E'] }    
+        self.theta_b0 = {'theta_b0': concrete['theta_b0'] }    
+        self.theta_b1 = {'theta_b1': concrete['theta_b1'] }    
+        self.k_riss = {'k_riss': concrete['k_riss'] }    
+        self.Entfestigung = {'Entfestigung': concrete['Entfestigung'] }    
+        self.lambdaTS = {'lambdaTS': concrete['lambdaTS'] }    
+        self.srmx = {'srmx': concrete['srmx'] }    
+        self.srmy = {'srmy': concrete['srmy'] }    
+        self.Begrenzung = {'Begrenzung': concrete['Begrenzung'] }    
+        self.KritQ = {'KritQ': concrete['KritQ'] }    
+        self.winkelD = {'winkelD': concrete['winkelD'] }    
+        self.k_vr = {'k_vr': concrete['k_vr'] }    
+        self.fswy = {'fswy': concrete['fswy'] }   
+
+        self.stahl1 = {'stahl1': reinf_1L['stahl'] }    
+        self.zm1 = {'zm1': reinf_1L['zm'] }    
+        self.fsy1 = {'fsy1': reinf_1L['fsy'] }    
+        self.fsu1 = {'fsu1': reinf_1L['fsu'] }    
+        self.esu1 = {'esu1': reinf_1L['esu'] }    
+        self.esv1 = {'esv1': reinf_1L['esv'] }    
+        self.Es1 = {'Es1': reinf_1L['Es'] }    
+        self.ka1 = {'ka1': reinf_1L['ka'] }    
+        self.kb1 = {'kb1': reinf_1L['kb'] }    
+        self.kc1 = {'kc1': reinf_1L['kc'] }    
+        self.as1 = {'as1': reinf_1L['as'] }    
+        self.dm1 = {'dm1': reinf_1L['dm'] }    
+        self.psi1 = {'psi1': reinf_1L['psi'] }    
+
+        self.stahl2 = {'stahl2': reinf_2L['stahl'] }    
+        self.zm2 = {'zm2': reinf_2L['zm'] }    
+        self.fsy2 = {'fsy2': reinf_2L['fsy'] }    
+        self.fsu2 = {'fsu2': reinf_2L['fsu'] }    
+        self.esu2 = {'esu2': reinf_2L['esu'] }    
+        self.esv2 = {'esv2': reinf_2L['esv'] }    
+        self.Es2 = {'Es2': reinf_2L['Es'] }    
+        self.ka2 = {'ka2': reinf_2L['ka'] }    
+        self.kb2 = {'kb2': reinf_2L['kb'] }    
+        self.kc2 = {'kc2': reinf_2L['kc'] }    
+        self.as2 = {'as2': reinf_2L['as'] }    
+        self.dm2 = {'dm2': reinf_2L['dm'] }    
+        self.psi2 = {'psi2': reinf_2L['psi'] }    
+
+        self.stahl3 = {'stahl3': reinf_3L['stahl'] }    
+        self.zm3 = {'zm3': reinf_3L['zm'] }    
+        self.fsy3 = {'fsy3': reinf_3L['fsy'] }    
+        self.fsu3 = {'fsu3': reinf_3L['fsu'] }    
+        self.esu3 = {'esu3': reinf_3L['esu'] }    
+        self.esv3 = {'esv3': reinf_3L['esv'] }    
+        self.Es3 = {'Es3': reinf_3L['Es'] }    
+        self.ka3 = {'ka3': reinf_3L['ka'] }    
+        self.kb3 = {'kb3': reinf_3L['kb'] }    
+        self.kc3 = {'kc3': reinf_3L['kc'] }    
+        self.as3 = {'as3': reinf_3L['as'] }    
+        self.dm3 = {'dm3': reinf_3L['dm'] }    
+        self.psi3 = {'psi3': reinf_3L['psi'] }   
+
+        self.stahl4 = {'stahl4': reinf_4L['stahl'] }    
+        self.zm4 = {'zm4': reinf_4L['zm'] }    
+        self.fsy4 = {'fsy4': reinf_4L['fsy'] }    
+        self.fsu4 = {'fsu4': reinf_4L['fsu'] }    
+        self.esu4 = {'esu4': reinf_4L['esu'] }    
+        self.esv4 = {'esv4': reinf_4L['esv'] }    
+        self.Es4 = {'Es4': reinf_4L['Es'] }    
+        self.ka4 = {'ka4': reinf_4L['ka'] }    
+        self.kb4 = {'kb4': reinf_4L['kb'] }    
+        self.kc4 = {'kc4': reinf_4L['kc'] }    
+        self.as4 = {'as4': reinf_4L['as'] }    
+        self.dm4 = {'dm4': reinf_4L['dm'] }    
+        self.psi4 = {'psi4': reinf_4L['psi'] }                      
+        
+        self.attr_list.extend(['E', 'v', 'G', 'p', 'R_Rohr', 'rho', 'oo', 'uu', 'beton', 'fcc', 'vc', 'ecu', 'k_E', 'theta_b0', 'theta_b1', 'k_riss', 'Entfestigung', 'lambdaTS', 'srmx', 'srmy', 'Begrenzung', 'KritQ', 'winkelD', 'k_vr', 'fswy', 'stahl1', 'zm1', 'fsy1', 'fsu1', 'esu1', 'esv1', 'Es1', 'ka1', 'kb1', 'kc1', 'as1', 'dm1', 'psi1', 'stahl2', 'zm2', 'fsy2', 'fsu2', 'esu2', 'esv2', 'Es2', 'ka2', 'kb2', 'kc2', 'as2', 'dm2', 'psi2', 'stahl3', 'zm3', 'fsy3', 'fsu3', 'esu3', 'esv3', 'Es3', 'ka3', 'kb3', 'kc3', 'as3', 'dm3', 'psi3', 'stahl4', 'zm4', 'fsy4', 'fsu4', 'esu4', 'esv4', 'Es4', 'ka4', 'kb4', 'kc4', 'as4', 'dm4', 'psi4'])        

@@ -450,7 +450,7 @@ class ShellSection(Section):
 
     """
 
-    def __init__(self, name, t, semi_loc_coords=None):
+    def __init__(self, name, t, semi_loc_coords=None, nn=50):
         
         Section.__init__(self, name=name)
 
@@ -464,7 +464,7 @@ class ShellSection(Section):
         self.loc_coords_EV_XA ={'EV_XA': semi_loc_coords[4]} 
         self.loc_coords_EV_YA ={'EV_YA': semi_loc_coords[5]} 
         self.loc_coords_EV_ZA ={'EV_ZA': semi_loc_coords[6]} 
-
+        self.nr_layers={'nn': nn} 
 
 class MembraneSection(Section):
     """Section for membrane elements.

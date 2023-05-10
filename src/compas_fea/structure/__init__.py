@@ -126,6 +126,7 @@ material
     ElasticOrthotropic
     ElasticPlastic
     Steel
+    CMMUsermat
 
 
 misc
@@ -240,7 +241,8 @@ from .material import (
     MPCStiff,
     ElasticOrthotropic,
     ElasticPlastic,
-    Steel
+    Steel,
+    CMMUsermat
 )
 from .misc import (
     Misc,
@@ -341,6 +343,7 @@ __all__ = [
     'ElasticOrthotropic',
     'ElasticPlastic',
     'Steel',
+    'CMMUsermat',
 
     'Node',
 

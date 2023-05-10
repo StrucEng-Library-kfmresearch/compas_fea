@@ -24,10 +24,12 @@ from time import time
 from compas_fea.utilities import colorbar
 from compas_fea.utilities import extrude_mesh
 from compas_fea.utilities import network_order
+from compas.rpc import Proxy
 
 if not compas.IPY:
     from compas_fea.utilities import meshing
     from compas_fea.utilities import functions
+
 else:
     from compas.rpc import Proxy
     functions = Proxy('compas_fea.utilities.functions')
@@ -898,7 +900,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     elif field in ['sminp']:
         nodal = 'min'
         iptype = 'min'
-    
+
     # Create and clear Rhino layer
 
     if not layer:
@@ -967,6 +969,32 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
                 name='(degree of utilization for concrete core, source=SMM)'        
             elif field == 'm_c_total':
                 name='(max degree of utilization for concrete, source=SMM)'                              
+
+        if source == 'CMMUsermat':
+            if field=='ux':
+                name='(global x-displacements, source=CMMUsermat)'            
+            elif field == 'uy':
+                name='(global y-displacements, source=CMMUsermat)'
+            elif field == 'uz':
+                name='(global z-displacements, source=CMMUsermat)'
+            elif field == 'um':
+                name='(global magnitue-displacements, source=CMMUsermat)'
+            elif field == 'sf1':
+                name='(membrane forces in local x-direction, source=CMMUsermat)'
+            elif field == 'sf2':
+                name='(membrane forces in local y-direction, source=CMMUsermat)'
+            elif field == 'sf3':
+                name='(shear forces in local xy-direction, source=CMMUsermat)'
+            elif field == 'sf4':
+                name='(transverse shear forces on local x-plane, source=CMMUsermat)'
+            elif field == 'sf5':
+                name='(transverse shear forces on local y-plane, source=CMMUsermat)'
+            elif field == 'sm1':
+                name='(bending moments around local y-direction, source=CMMUsermat)'
+            elif field == 'sm2':
+                name='(bending moments around local x-direction, source=CMMUsermat)'
+            elif field == 'sm3':
+                name='(twisting moments in x- and y-directions, source=CMMUsermat)' 
 
         layer = '{0}-{1}-{3}{2}'.format(step, field, mode,name)
 
@@ -1146,33 +1174,95 @@ def plot_principal_stresses(structure, step, sp, stype, scale, layer=None):
     - Centroids are taken on the undeformed geometry.
 
     """
+    # Einlesen der Daten
+    data = structure.results[step]['GP']  
+    GP_name=data['GP_name']
+    sig_x=data['sig_x_top']  
+    sig_y=data['sig_y_top']  
+    tau_xy=data['tau_xy_top']  
+    fcc_eff=data['fcc_eff']     
+    coor_intp_toplayer_x=data['coor_intp_toplayer_x']     
+    coor_intp_toplayer_y=data['coor_intp_toplayer_y']     
+    coor_intp_toplayer_z=data['coor_intp_toplayer_z']
 
-    data = structure.results[step]['element']
-    axes = data['axes']
-    spr, e = functions.principal_stresses(data)
+    # EXAMPLE 1 TESTING CALL CPYTHON Code        
+    #numpy = Proxy('numpy')
+    #x = numpy.array([[11, 12, 5], [15, 6,10], [10, 8, 12], [12,15,8], [34, 78, 90]]) 
+    #print(x)
+    linalg = Proxy('numpy.linalg')
+    #norm = linalg.norm(x) 
+    #print(norm)
 
-    stresses = spr[sp][stype]
-    max_stress = max([abs(i) for i in stresses])
-    vectors = list(zip([e[sp][stype][0][i]*stresses[i]/scale for i in range(len(stresses))],
-                       [e[sp][stype][1][i]*stresses[i]/scale for i in range(len(stresses))]))
+    # EXMAPLE 2 Berechnung der Eigenwerte und der Eigenvektoren
+    #A = numpy.array([[11, 12], [15, 6]]) 
 
-    if not layer:
-        layer = '{0}_{1}_principal_{2}'.format(step, sp, stype)
-    rs.CurrentLayer(rs.AddLayer(layer))
-    rs.DeleteObjects(rs.ObjectsByLayer(layer))
-    rs.EnableRedraw(False)
+    #ew, ev = linalg.eig(A)
 
-    centroids = [structure.element_centroid(i) for i in sorted(structure.elements, key=int)]
+    # Proxy initialisierung 
+    #numpy = Proxy('numpy')
+    #linalg = Proxy('numpy.linalg')
 
-    for c, centroid in enumerate(centroids):
-        f2 = Frame(centroid, axes[c][0], axes[c][1])
-        T = Transformation.from_frame(f2)
-        v_plus = Vector(vectors[c][0]*0.5, vectors[c][1]*0.5, 0.).transformed(T)
-        v_minus = Vector(-vectors[c][0]*0.5, -vectors[c][1]*0.5, 0.).transformed(T)
-        id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
-        col1 = colorbar(stresses[c] / max_stress, input='float', type=255)
-        rs.ObjectColor(id1, col1)
-    rs.EnableRedraw(True)
+    # 1. Berechnung der Hauptspannungen (Eigenwertproblem)
+    #print(functions)
+    
+    #functions.principal_stresses(data)
+    #print('hier')
+        
+
+
+
+    
+
+    x = range(52)
+    tic=time()
+    for n in x:
+        data=n
+
+        aaaa=functions.principal_stresses(data)
+        print(aaaa)
+    toc = time() - tic
+    print(toc)
+    #    ew, ev = linalg.eig([[-11, 5], [5, 2]])
+        
+    #toc = time() - tic
+    #print(toc)
+    #for b in range(length_stress): # Start bei Null 0 bis length_stress-1
+    #    sig_x_GP=sig_x[b]
+    #    sig_y_GP=sig_y[b]
+    #    tau_xy_GP=tau_xy[b]
+    #    print(sig_x_GP)
+    #    print(sig_y_GP)
+    #    print(tau_xy_GP)
+
+    #    ew, ev = linalg.eig([[-11, 5], [5, 2]])
+    
+    #    print(ew)
+    #    print(ev)
+
+        
+        
+        # ew, ev = linalg.eig(stress_matrix) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+
+ 
+
+        #print(coor_intp_toplayer_x)
+        #print(coor_intp_toplayer_x[coor[0]])
+        #print(coor_intp_toplayer_x[1][1])
+        
+        
+        ### hier weiterfahren
+        # f2 = Frame([coor_intp_toplayer_x[coor[0]],coor_intp_toplayer_y[coor[0]],coor_intp_toplayer_z[coor[0]]], [1,0,0] , [0,1,0])
+        
+
+    #for c, centroid in enumerate(centroids):
+        #f2 = Frame(centroid, axes[c][0], axes[c][1])
+        # T = Transformation.from_frame(f2)
+        # v_plus = Vector(vectors[c][0]*0.5, vectors[c][1]*0.5, 0.).transformed(T)
+        # v_minus = Vector(-vectors[c][0]*0.5, -vectors[c][1]*0.5, 0.).transformed(T)
+        # id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
+        # col1 = colorbar(stresses[c] / max_stress, input='float', type=255)
+        # rs.ObjectColor(id1, col1)
+    #rs.EnableRedraw(True)
 
 
 def plot_voxels(structure, step, field='smises', cbar=[None, None], iptype='mean', nodal='mean', vdx=None, mode=''):

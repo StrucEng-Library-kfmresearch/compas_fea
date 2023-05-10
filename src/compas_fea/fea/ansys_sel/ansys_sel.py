@@ -15,6 +15,7 @@ from time import sleep
 
 import json
 import os
+from sys import exit
 
 import shutil
 import subprocess
@@ -114,11 +115,19 @@ def launch_process(structure, exe, cpus, output):
     # Analyse
     check_run_path=str(path) + "\\" + 'run_ansys_check.txt'
     
+    # Check files exist
     if os.path.exists(check_run_path):
         os.remove(check_run_path)
     else:
         pass
-        
+
+    err_File_ansys=os.path.join(path, name + '.err')        
+    if os.path.exists(err_File_ansys):
+            os.remove(err_File_ansys)
+    else:
+        pass
+                  
+
     # Set options
     ansys_path = 'C:\\Program Files\\ANSYS Inc\\v221\\ansys\\bin\\winx64\\ANSYS221.exe'
     lic_str = 'ansys'
@@ -143,15 +152,26 @@ def launch_process(structure, exe, cpus, output):
 
     print('Ansys MAPDL analysis is running ... please wait ... ' )
 
+    # Warten bis Ansys Solution finished oder ein Error in Ansys auftritt
     while True:
         
         isFile = os.path.isfile(check_run_path)
-        
+
         if isFile == True:
             success = True
              #sleep(10)
-            break            
-    
+            break      
+
+        else:            
+            test_err=os.path.join(path, name + '.err')                        
+            if os.path.isfile(test_err)==True:                  
+                with open(test_err) as temp_err:
+                    data_err=temp_err.readlines()
+                    for line in data_err:
+                        if 'ERROR' in line:                                                                                   
+                            print('Ansys MAPDL analysis failed - check .err file from Ansys MAPDL')
+                            exit()            
+
     toc = time() - tic
     
 
@@ -161,6 +181,7 @@ def launch_process(structure, exe, cpus, output):
 
     else:
         print('Ansys MAPDL analysis failed')
+        exit()        
 
 # -------------------------------------------------------------------------
 # extract the results from ANSYS APDL and save in the structure 
@@ -198,77 +219,119 @@ def extract_data(structure, fields, exe, output, return_data, components):
         tic = time()   
         steps = structure.steps    
         out_path = os.path.join(structure.path, structure.name + '_output')
-        if steps == 'all':
-            steps = structure.steps.keys()
-        elif steps == 'last':
-            steps = [structure.steps_order[-1]]
-        elif type(steps) == str:
-            steps = [steps]
+        #if steps == 'all':
+        #    steps = structure.steps.keys()
+        #elif steps == 'last':
+        #    steps = [structure.steps_order[-1]]
+        #elif type(steps) == str:
+        #    steps = [steps]
 
         for step in steps:
             structure.results[step] = {}
             if structure.steps[step].__name__ == 'GeneralStep':
+                
+                # Aufbau vektoren fur Node und Element Daten
                 rlist = []    
-                elist = []  
+                result_data = []  
+                gplist = []
 
                 # Displacements at nodes (node fields)
+                # ----------------------------------
                 if 'u' in fields or 'all' in fields:
                     filename = step + '_displacements.txt'
                     
-                    try:
+                    isfile_filename=str(out_path) + "\\" + filename
+                                        
+                         
+                    if os.path.isfile(isfile_filename)==True:          
                         dfile = open(os.path.join(out_path, filename), 'r')
-                    except(Exception):
-                        return None
-
-                    displacements = dfile.readlines()
-                    
-                    
-                    disp_dict = {'ux': {}, 'uy': {}, 'uz': {}, 'um': {}}
-                    for disp in displacements:
-                        dstring = disp.split(',')           
-                        disp = map(float, dstring[1:])
-                        key = int(float(dstring[0])) - 1                        
-                        #print(key)
-                        disp_dict['ux'][key] = disp[0]
-                        disp_dict['uy'][key] = disp[1]
-                        disp_dict['uz'][key] = disp[2]
-                        # disp_dict['um'][key] = disp[4]
-                        disp_dict['um'][key] = length_vector([disp[0], disp[1], disp[2]])
+                        displacements = dfile.readlines()
+                                       
+                        disp_dict = {'ux': {}, 'uy': {}, 'uz': {}, 'um': {}}
+                        for disp in displacements:
+                            dstring = disp.split(',')           
+                            disp = map(float, dstring[1:])
+                            key = int(float(dstring[0])) - 1                        
+                            #print(key)
+                            disp_dict['ux'][key] = disp[0]
+                            disp_dict['uy'][key] = disp[1]
+                            disp_dict['uz'][key] = disp[2]
+                            # disp_dict['um'][key] = disp[4]
+                            disp_dict['um'][key] = length_vector([disp[0], disp[1], disp[2]])
         
-                    udict = disp_dict  
-                    rlist.append(udict)
+                        udict = disp_dict  
+                        rlist.append(udict)
                 
                 # Shell forces/moments at element centroid (element fields)
+                # -------------------------------------------------------
                 if 'sf' in fields or 'all' in fields:
-                    filename = step + '_shell_forces_moments.txt'
-                    try:
-                        dfile = open(os.path.join(out_path, filename), 'r')
-                    except(Exception):
-                        return None
-
-                    #leeres Resultat dict.
-                    result_data = {str(step) : {"element" : {"sf1" : {}, "sf2" : {}, "sf3" : {}, "sf4" : {},  "sf5" : {}, "sm1" : {}, "sm2" : {}, "sm3" : {}, "ele_type" : {},  }}}    
-    
-                    # displacements = dfile.readlines()
-                    shell_forces_moments = dfile.readlines()
-                    #print(shell_forces_moments)
-                    for f_m in shell_forces_moments:
-                        fmstring = f_m.split(',')
-                        f_m = map(float, fmstring[2:]) # includes the value sf1, sf2, etc                                        
-                        key = int(float(fmstring[1])) - 1
-                        
-                        # Speichert Resultate von fuer Elemente im gesamt Resultatverzeichnis (result_data)
-                        result_data[str(step)]["element"]["sf1"].update({key : {"ip1_sp0" : f_m[0]}})
-                        result_data[str(step)]["element"]["sf2"].update({key : {"ip1_sp0" : f_m[1]}})
-                        result_data[str(step)]["element"]["sf3"].update({key : {"ip1_sp0" : f_m[2]}})
-                        result_data[str(step)]["element"]["sf4"].update({key : {"ip1_sp0" : f_m[3]}})
-                        result_data[str(step)]["element"]["sf5"].update({key : {"ip1_sp0" : f_m[4]}})
-                        result_data[str(step)]["element"]["sm1"].update({key : {"ip1_sp0" : f_m[5]}})
-                        result_data[str(step)]["element"]["sm2"].update({key : {"ip1_sp0" : f_m[6]}})
-                        result_data[str(step)]["element"]["sm3"].update({key : {"ip1_sp0" : f_m[7]}})
-                        result_data[str(step)]["element"]["ele_type"].update({key : {"ip1_sp0" : f_m[8]}})
                     
-            
+                    filename = step + '_shell_forces_moments.txt'
+
+                    isfile_filename=str(out_path) + "\\" + filename
+
+                    if os.path.isfile(isfile_filename)==True:
+                        
+                        dfile = open(os.path.join(out_path, filename), 'r')    
+                        
+                        #leeres Resultat dict.
+                        result_data = {str(step) : {"element" : {"sf1" : {}, "sf2" : {}, "sf3" : {}, "sf4" : {},  "sf5" : {}, "sm1" : {}, "sm2" : {}, "sm3" : {}, "ele_type" : {},  }}}    
+    
+                        # displacements = dfile.readlines()
+                        shell_forces_moments = dfile.readlines()
+                        #print(shell_forces_moments)
+                        for f_m in shell_forces_moments:
+                            fmstring = f_m.split(',')
+                            f_m = map(float, fmstring[2:]) # includes the value sf1, sf2, etc                                        
+                            key = int(float(fmstring[1])) - 1
+                        
+                            # Speichert Resultate von fuer Elemente im gesamt Resultatverzeichnis (result_data)
+                            result_data[str(step)]["element"]["sf1"].update({key : {"ip1_sp0" : f_m[0]}})
+                            result_data[str(step)]["element"]["sf2"].update({key : {"ip1_sp0" : f_m[1]}})
+                            result_data[str(step)]["element"]["sf3"].update({key : {"ip1_sp0" : f_m[2]}})
+                            result_data[str(step)]["element"]["sf4"].update({key : {"ip1_sp0" : f_m[3]}})
+                            result_data[str(step)]["element"]["sf5"].update({key : {"ip1_sp0" : f_m[4]}})
+                            result_data[str(step)]["element"]["sm1"].update({key : {"ip1_sp0" : f_m[5]}})
+                            result_data[str(step)]["element"]["sm2"].update({key : {"ip1_sp0" : f_m[6]}})
+                            result_data[str(step)]["element"]["sm3"].update({key : {"ip1_sp0" : f_m[7]}})
+                            result_data[str(step)]["element"]["ele_type"].update({key : {"ip1_sp0" : f_m[8]}})
+                    
+                # Principal Stresses at each GP
+                # -------------------------------------------------------
+                if 's' in fields or 'all' in fields:
+                    filename = step + '_stresses.txt'
+                    
+                    isfile_filename=str(out_path) + "\\" + filename
+                                        
+                         
+                    if os.path.isfile(isfile_filename)==True:          
+                        psfile = open(os.path.join(out_path, filename), 'r')
+                        ps = psfile.readlines()
+                                       
+                        
+                        stress_dict = {'GP_name': {},'usedmodel': {},'sig_1_top': {}, 'sig_3_top': {}, 'sig_x_top': {}, 'sig_y_top': {}, 'tau_xy_top': {} , 'fcc_eff': {} , 'coor_intp_toplayer_x': {} , 'coor_intp_toplayer_y': {}, 'coor_intp_toplayer_z': {}} # sig_c1 and sig_c3  top an einem GP
+                        for i in range(len(ps)):
+                            psstring = ps[i].split(',')
+                            stress = map(float, psstring)
+                            key = int(stress[0]) - 1
+                            stress_dict['GP_name'][key] = float(stress[0])
+                            stress_dict['usedmodel'][key] = float(stress[1])
+                            stress_dict['sig_x_top'][key] = float(stress[2])
+                            stress_dict['sig_y_top'][key] = float(stress[3])                            
+                            stress_dict['tau_xy_top'][key] = float(stress[4])                                                        
+                            stress_dict['fcc_eff'][key] = float(stress[5])
+                            stress_dict['coor_intp_toplayer_x'][key] = float(stress[6])
+                            stress_dict['coor_intp_toplayer_y'][key] = float(stress[7])
+                            stress_dict['coor_intp_toplayer_z'][key] = float(stress[8])
+                          
+                        
+                        
+                        gplist.append(stress_dict)
+                
+
+                # 
+                # 
+                            
             #  Speichert nodal and element reuslts in die structure.result dict von Compas FEA. damit die Compas FEA Funktion rhino.plot_data() genutzt werden kann
             # Nodal results
             if rlist:
@@ -277,10 +340,16 @@ def extract_data(structure, fields, exe, output, return_data, components):
                     for key in rdict:
                         structure.results[step]['nodal'][key] = rdict[key] 
 
-            # element results results
+            if gplist:
+                structure.results[step]['GP'] = {}
+                for gpdict in gplist:
+                    for key in gpdict:
+                        structure.results[step]['GP'][key] = gpdict[key]                         
 
-            structure.results[step]['element'] = {}
-            structure.results[step]['element'].update(result_data[step]['element'])
+            # element results results
+            if result_data:                
+                structure.results[step]['element'] = {}
+                structure.results[step]['element'].update(result_data[step]['element'])
             
             
             toc = time() - tic

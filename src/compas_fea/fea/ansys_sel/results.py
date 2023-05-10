@@ -40,11 +40,11 @@ class Results(object):
         sbstep=sbstep # Substep
         step_list=structure.steps_order
         
-            # Schleife uber alle vorhandenen loadsteps
+        # Schleife uber alle vorhandenen loadsteps
         for single_lstep in lstep:
-
+            
             lstep_index=step_list.index(single_lstep)         
-                
+            
             
             self.write_line('set,{0},{1}'.format(lstep_index,sbstep))
             print('---------------------')
@@ -68,6 +68,7 @@ class Results(object):
             filename = name + '_extract.txt'
             
             # Write Displacement at nodes
+            # ------------------------------------------------------------------
             if 'u' in fields or 'all' in fields:
                 fname = str(step_name) + '_' + 'displacements'
                 name_ = 'nds_d'
@@ -102,6 +103,7 @@ class Results(object):
                 cFile.close()
 
             # Write Shell forces and moments (only for Shell elements)
+            # ------------------------------------------------------------------
             if 'sf' in fields or 'all' in fields:
 
                 fname = str(step_name) + '_' + 'shell_forces_moments'
@@ -186,103 +188,145 @@ class Results(object):
                 self.write_line('! ')
                 cFile.close()
         
-                #self.write_line('*cfopen,' + out_path + '/' + fname + ',txt \n')
-                #print('slayer')
-                #self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
-                #self.write_line('*CFWRITE, stresses, Enumber, sf1, sf2, sf3 \n')
-                #self.write_line('*do,i,1,nelem \n')
-                #self.write_line('*CFWRITE, stresses, enum(i,1), eforces(i,1), eforces(i,2), eforces(i,3) \n')
-                #self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_x + '(1) , \',\' , ' + name_y + '(1) , \',\' ,' + name_z + '(1)')
-                #self.write_line('*CFWRITE, ' +name_ + '(1) , ' + 'eforces(i,1), eforces(i,2), eforces(i,3) \n')
-                #self.write_line('*Enddo \n')
-                #print('SCHLACH')
-                #self.write_line('ESEL, ALL \n')
-                #self.write_line('ETABLE, ERAS \n')
-                #self.write_line('! \n')
-                #cFile.close()
-                #self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
-                #self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
-                #self.write_line('*do,i,1,nelem \n')            
-                #self.write_line('*vwrite, ' + 'eforces' + '(1,i) , \',\' , ' + 'eforces' + '(1,i) , \',\' ,' + 'eforces' + '(1,i)')
-                #self.write_line('(          F4.0,       A,       ES,           A,          ES,          A,      ES)')
-                #self.write_line('*Enddo \n')
-                #self.write_line('!')
-                #self.write_line('!')
-                #cFile.close()
+            # Write stresses at each GP from usermat results
+            # ------------------------------------------------------------------               
+            if 's' in fields or 'all' in fields:
+                fname = str(step_name) + '_' + 'stresses'
+                name_ = 's_GP'
+                name_usedmodel = 'usedmodel'
+                name_sig_c1 = 'sig_c1'
+                name_sig_c3 = 'sig_c3'
+                name_sig_x = 'sig_x'
+                name_sig_y = 'sig_y'
+                name_tau_xy = 'tau_xy'
+                name_fcc_eff = 'fcc_eff'
+                name_coor_intp_toplayer_x ='coor_intp_toplayer_x'
+                name_coor_intp_toplayer_y ='coor_intp_toplayer_y'
+                name_coor_intp_toplayer_z ='coor_intp_toplayer_z'
+
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write stresses')
+                self.blank_line()
 
 
-                #self.blank_line()
-                #self.write_line('! Write Shelll Forces')
-                #self.blank_line()
-                #self.write_line('allsel')
-                #self.write_line('nsel,all')
-                #self.write_line('*GET,NrE,ELEM,0,COUNT ')
-                #self.write_line('*DIM,N_E,ARRAY,NrE,1')
-                #self.write_line('*VGET,N_E,ELEM, ,ELIST')
-                #self.write_line('ETAB,ERASE')
-                #self.blank_line()            
-                #self.write_line('*DIM,elem_nr,ARRAY,NrE,1')
-                #self.write_line('*DIM,mvn,ARRAY,NrE,8')
-                #self.blank_line()
-                #self.write_line('*DO,ii,1,NrE')
-                #self.write_line('elem_nr(ii,1) = N_E(ii)')
-                #self.write_line('ETABLE,NX,SMISC,1')                   
-                #self.write_line('*GET,mvn(ii,1),ETAB,1,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,NY,SMISC,2')                         
-                #self.write_line('*GET,mvn(ii,2),ETAB,2,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,NXY,SMISC,3')                         
-                #self.write_line('*GET,mvn(ii,3),ETAB,3,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,MX,SMISC,4')                  
-                #self.write_line('*GET,mvn(ii,4),ETAB,4,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,MY,SMISC,5')  
-                #self.write_line('*GET,mvn(ii,5),ETAB,5,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,MXY,SMISC,6')                   
-                #self.write_line('*GET,mvn(ii,6),ETAB,6,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,VX,SMISC,7')  
-                #self.write_line('*GET,mvn(ii,7),ETAB,7,ELEM,N_E(ii)')   
-                #self.write_line('ETABLE,VY,SMISC,8')  
-                #self.write_line('*GET,mvn(ii,8),ETAB,8,ELEM,N_E(ii)')  
-                #self.write_line('*ENDDO')
-                #self.blank_line()
                 
-    
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
 
-            
-                #self.blank_line()
-                #self.write_line('*DEL,NrN,,NOPR')
-                #self.write_line('*DEL,N_N,,NOPR')
-                #self.write_line('*DEL,NrE,,NOPR')
-                #self.write_line('*DEL,N_E,,NOPR')
-                #self.blank_line()
+                # Aufbau der Arrays
+                self.write_line('*DIM,sig_c1,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_c3,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,tau_xy,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fcc_eff,ARRAY,4*NrE,1')
+
+                self.write_line('*DIM,usedmodel,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                self.write_line('*DIM,coor_intp_toplayer_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_toplayer_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_toplayer_z,ARRAY,4*NrE,1')
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE')
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')
+                self.write_line('*GET,s_GP(aux,1),NODE,N_N(kk),SVAR,1 ')
+                
+                self.write_line('LAYER,1')
+                self.write_line('*GET,usedmodel(aux,1),NODE,N_N(kk),SVAR,1 ')
+                self.write_line('*GET,usedmodel_check,NODE,N_N(kk),SVAR,1 ')
+                
+                self.write_line('*IF,usedmodel_check,EQ,1,THEN ')                
+                self.write_line('*GET,sig_c1(aux,1),NODE,N_N(kk),SVAR,8')                
+                self.write_line('*GET,sig_c3(aux,1),NODE,N_N(kk),SVAR,9')
+                self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
+                self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
+                self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68') 
+                self.write_line('*GET,fcc_eff(aux,1),NODE,N_N(kk),SVAR,12')
+
+                self.write_line('*ELSEIF,usedmodel_check,EQ,2,THEN')
+                self.write_line('*GET,sig_c1(aux,1),NODE,N_N(kk),SVAR,29 ')
+                self.write_line('*GET,sig_c3(aux,1),NODE,N_N(kk),SVAR,30 ')
+                self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
+                self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
+                self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68')                 
+                self.write_line('*GET,fcc_eff(aux,1),NODE,N_N(kk),SVAR,33 ')
+
+                self.write_line('*ELSEIF,usedmodel_check,EQ,3,THEN')
+                self.write_line('*GET,sig_x,NODE,N_N(kk),SVAR,66')
+                self.write_line('*GET,sig_y,NODE,N_N(kk),SVAR,67')
+                self.write_line('*GET,sig_xy,NODE,N_N(kk),SVAR,68')
+                self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
+                self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
+                self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68') 
+                self.write_line('sig_c1(aux,1)=(sig_x+sig_y)/2+SQRT((1/2)*((sig_x+sig_y)*(sig_x+sig_y)+(2*sig_xy)*(2*sig_xy)))')
+                self.write_line('sig_c3(aux,1)=(sig_x+sig_y)/2-SQRT((1/2)*((sig_x+sig_y)*(sig_x+sig_y)+(2*sig_xy)*(2*sig_xy)))')
+                self.write_line('fcc_eff(aux,1)=50000000000000000')
+
+                self.write_line('*ELSEIF,usedmodel_check,EQ,4,THEN')
+                self.write_line('sig_c1(aux,1)=0')
+                self.write_line('*GET,sig_c3(aux,1),NODE,N_N(kk),SVAR,18 ')
+                self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
+                self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
+                self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68')                
+                self.write_line('*GET,fcc_eff(aux,1),NODE,N_N(kk),SVAR,19')
+
+                self.write_line('*ELSEIF,usedmodel_check,EQ,5,THEN')
+                self.write_line('*GET,sig_c1(aux,1),NODE,N_N(kk),SVAR,39')
+                self.write_line('sig_c3(aux,1)=0')
+                self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
+                self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
+                self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68')                
+                self.write_line('fcc_eff(aux,1)=50000000000000000')
+                
+                self.write_line('*ENDIF')
+
+                self.write_line('*GET,coor_intp_toplayer_x(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_intp_toplayer_y(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_intp_toplayer_z(aux,1),NODE,N_N(kk),SVAR,65')
+
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR')
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
 
 
-                #self.write_line('Arg1' + '=' + "'"+ 'mvn' + "'")
-                #self.write_line('Arg2' + '=' + "'"+ 'f20.5' + "'")
-                #self.write_line('Arg3=13')
-                #self.write_line('Arg4' + '=' + "'"+ 'eforces.txt' + "'")
 
-                #self.write_line('~eui,' + "'"+  'set arrname [ans_getvalue PARM,Arg1,value]'+ "'")
-                #self.write_line('~eui,' + "'"+  'set formatdescriptor [ans_getvalue PARM,Arg2,value]'+ "'")
-                #self.write_line('~eui,' + "'"+  'set numcol [ans_getvalue PARM,Arg3,value]'+ "'")
-                #self.write_line('~eui,' + "'"+  'set filename [ans_getvalue PARM,Arg4,value]'+ "'")            
-                #self.write_line('~eui,' + "'"+  'set arrname [string trim $arrname]'+ "'")
-                #self.write_line('~eui,' + "'"+  'set formatdescriptor [string trim $formatdescriptor]'+ "'")
-                #self.write_line('~eui,' + "'"+  'set filename [string trim $filename]'+ "'") 
-                #self.write_line('~eui,' + "'"+  'set cmd "*mwrite,$arrname"'+ "'")
-                #self.write_line('~eui,' + "'"+  'append cmd "(1,1),"'+ "'")
-                #self.write_line('~eui,' + "'"+  'append cmd [file rootname $filename]'+ "'")            
-                #self.write_line('~eui,' + "'"+  'append cmd ","'+ "'")
-                #self.write_line('~eui,' + "'"+  'append cmd [string trimleft [file extension $filename] "."]'+ "'")
-                #self.write_line('~eui,' + "'"+  'append cmd' + ' "' + '\\n' + '"' + "'")
-                #self.write_line('~eui,' + "'"+  'append cmd "($numcol$formatdescriptor)"' + "'")
-                #self.write_line('~eui,' + "'"+  'set fid [open mk_mwritehelper.mac w]'+ "'")
-                #self.write_line('~eui,' + "'"+  'puts $fid $cmd'+ "'")
-                #self.write_line('~eui,' + "'"+  'close $fid'+ "'")
-                #self.write_line('~eui,' + "'"+  'ans_sendcommand mk_mwritehelper'+ "'")
-                #self.write_line('~eui,' + "'"+  'file delete mk_mwritehelper.mac'+ "'")
 
-                #self.write_line('*DEL,mvn,,NOPR')
+                #self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                #self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_usedmodel + '(1) , \',\' , ' + name_sig_c1 + '(1) , \',\' ,' + name_sig_c3 + '(1) , \',\' ,' + name_sig_x + '(1) , \',\' ,' + name_sig_y + '(1) , \',\' ,' + name_tau_xy + '(1) , \',\' ,' + name_fcc_eff + '(1) , \',\' ,' + name_coor_intp_toplayer_x + '(1) , \',\' ,' + name_coor_intp_toplayer_y + '(1) , \',\' ,' + name_coor_intp_toplayer_z + '(1) ')
+                #self.write_line('(          F100000.0,       A,       ES,           A,          ES,          A,      ES,          A,      ES,          A,      ES,          A,      ES,          A,      ES          A,      ES          A,      ES          A,      ES)')
+                #self.write_line('*cfclose \n')
 
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_usedmodel + '(1) , \',\' , ' + name_sig_x + '(1) , \',\' ,' + name_sig_y + '(1) , \',\' ,'+ name_tau_xy + '(1) , \',\' ,' + name_fcc_eff + '(1) , \',\' ,'+ name_coor_intp_toplayer_x + '(1) , \',\' ,'  + name_coor_intp_toplayer_y + '(1) , \',\' ,' + name_coor_intp_toplayer_z + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+
+
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close()      
+
+          
             else:
                 pass 
 

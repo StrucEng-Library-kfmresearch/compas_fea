@@ -365,6 +365,7 @@ class Steps(object):
             self.write_line('outres,nsol,last')
             self.write_line('outres,rsol,last')
             self.write_line('outres,esol,last')
+            self.write_line('outres,svar,all')
 
             if 'rbfor' in fields:
                 self.write_line('*ELEMENT OUTPUT, REBAR')
