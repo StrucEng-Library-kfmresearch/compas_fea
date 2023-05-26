@@ -569,23 +569,44 @@ def principal_stresses(data):
     --------
     The function is experimental and works only for shell elements at the moment.
     """
-    components = ['sxx', 'sxy', 'syy']
-    stype = ['max', 'min']
-    section_points = ['sp1', 'sp5']
+    # Top Spannungen
+    # -----------------------------------------------------------------------------------
+    components = ['sig_x_top', 'sig_y_top', 'tau_xy_top']
 
     stress_results = list(zip(*[data[stress_name].values() for stress_name in components]))
-    spr = {sp: {st: np.zeros((len(stress_results))) for st in stype} for sp in section_points}
-    e = {sp: {k: np.zeros((2, len(stress_results))) for k in stype} for sp in section_points}
-    for sp in section_points:
-        for c, element_stresses in enumerate(stress_results):
-            # Stresses are computed as mean values of the integration points
-            stress_vector = [np.mean(np.array([v for k, v in i.items() if sp in k])) for i in element_stresses]
-            # The principal stresses and their directions are computed solving the eigenvalues problem
-            stress_matrix = np.array([(stress_vector[0], stress_vector[1]),
-                                      (stress_vector[1], stress_vector[2])])
-            w_sp, v_sp = np.linalg.eig(stress_matrix)
-            for v, k in enumerate(stype):
-                spr[sp][k][c] += w_sp[v]
-                e[sp][k][:, c] += v_sp[:, v]
+    length_stress=len(stress_results)
+    ew_top=[]
+    ev_top=[]
+    # Berechnung der Hauptspannungen 3 und 1
+    for b in range(length_stress): # Start bei Null 0 bis length_stress-1
+        
+        sig_x_GP=stress_results[b][0]
+        sig_y_GP=stress_results[b][1]
+        tau_xy_GP=stress_results[b][2]
 
-    return spr, e
+        ew_GP, ev_GP = np.linalg.eig([[sig_x_GP, tau_xy_GP], [tau_xy_GP, sig_y_GP]]) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+        ew_top.append(ew_GP)
+        ev_top.append(ev_GP)
+
+    # Bot Spannungen
+    # -----------------------------------------------------------------------------------
+    components = ['sig_x_bot', 'sig_y_bot', 'tau_xy_bot']
+
+    stress_results = list(zip(*[data[stress_name].values() for stress_name in components]))
+    length_stress=len(stress_results)
+    ew_bot=[]
+    ev_bot=[]
+    # Berechnung der Hauptspannungen 3 und 1
+    for b in range(length_stress): # Start bei Null 0 bis length_stress-1
+        
+        sig_x_GP=stress_results[b][0]
+        sig_y_GP=stress_results[b][1]
+        tau_xy_GP=stress_results[b][2]
+
+        ew_GP, ev_GP = np.linalg.eig([[sig_x_GP, tau_xy_GP], [tau_xy_GP, sig_y_GP]]) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+        ew_bot.append(ew_GP)
+        ev_bot.append(ev_GP)
+           
+   
+    
+    return ew_top, ev_top, ew_bot, ev_bot, length_stress

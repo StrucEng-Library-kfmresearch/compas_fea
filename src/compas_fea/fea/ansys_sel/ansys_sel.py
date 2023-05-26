@@ -231,9 +231,41 @@ def extract_data(structure, fields, exe, output, return_data, components):
             if structure.steps[step].__name__ == 'GeneralStep':
                 
                 # Aufbau vektoren fur Node und Element Daten
+                elem_infos_list=[]
                 rlist = []    
                 result_data = []  
                 gplist = []
+
+
+                # extract gerneal element infos
+                filename = step + '_elem_infos.txt'
+
+                isfile_filename=str(out_path) + "\\" + filename
+
+                if os.path.isfile(isfile_filename)==True:
+                    
+                    efile = open(os.path.join(out_path, filename), 'r')    
+                    e_i = efile.readlines()                    
+                    #leeres Resultat dict.                    
+                    elem_infos_dict = {'elem_nr' : {}, 'elem_typ' : {}, 'elem_loc_x_glob_x' : {}, 'elem_loc_x_glob_y' : {},  'elem_loc_x_glob_z' : {}, 'elem_loc_y_glob_x' : {}, 'elem_loc_y_glob_y' : {}, 'elem_loc_y_glob_z' : {}}
+                    
+                    
+                    #print
+                    for i in range(len(e_i)):
+                        e_i_string = e_i[i].split(',')
+                        ele = map(float, e_i_string[1:])
+                        key = int(ele[0]) - 1                                                    
+                        # Speichert Resultate von fuer Elemente im gesamt Resultatverzeichnis (result_data)
+                        elem_infos_dict['elem_nr'][key]=float(ele[0])
+                        elem_infos_dict['elem_typ'][key]=float(ele[1])
+                        elem_infos_dict['elem_loc_x_glob_x'][key]=float(ele[2])
+                        elem_infos_dict['elem_loc_x_glob_y'][key]=float(ele[3])
+                        elem_infos_dict['elem_loc_x_glob_z'][key]=float(ele[4])
+                        elem_infos_dict['elem_loc_y_glob_x'][key]=float(ele[5])
+                        elem_infos_dict['elem_loc_y_glob_y'][key]=float(ele[6])
+                        elem_infos_dict['elem_loc_y_glob_z'][key]=float(ele[7])
+
+                    elem_infos_list.append(elem_infos_dict)  
 
                 # Displacements at nodes (node fields)
                 # ----------------------------------
@@ -241,7 +273,7 @@ def extract_data(structure, fields, exe, output, return_data, components):
                     filename = step + '_displacements.txt'
                     
                     isfile_filename=str(out_path) + "\\" + filename
-                                        
+                           
                          
                     if os.path.isfile(isfile_filename)==True:          
                         dfile = open(os.path.join(out_path, filename), 'r')
@@ -299,7 +331,9 @@ def extract_data(structure, fields, exe, output, return_data, components):
                 # Principal Stresses at each GP
                 # -------------------------------------------------------
                 if 's' in fields or 'all' in fields:
-                    filename = step + '_stresses.txt'
+                    
+                    # Add stresses elment infos to the structure
+                    filename = step + '_stresses_elem_infos.txt'
                     
                     isfile_filename=str(out_path) + "\\" + filename
                                         
@@ -309,22 +343,75 @@ def extract_data(structure, fields, exe, output, return_data, components):
                         ps = psfile.readlines()
                                        
                         
-                        stress_dict = {'GP_name': {},'usedmodel': {},'sig_1_top': {}, 'sig_3_top': {}, 'sig_x_top': {}, 'sig_y_top': {}, 'tau_xy_top': {} , 'fcc_eff': {} , 'coor_intp_toplayer_x': {} , 'coor_intp_toplayer_y': {}, 'coor_intp_toplayer_z': {}} # sig_c1 and sig_c3  top an einem GP
+                        stress_dict = {'nr': {},'loc_x_glob_x': {}, 'loc_x_glob_y': {}, 'loc_x_glob_z': {}, 'loc_y_glob_x': {} , 'loc_y_glob_y': {} , 'loc_y_glob_z': {} , 'elem_typ': {} } # sig_c1 and sig_c3  top an einem GP
+                        for i in range(len(ps)):
+                            psstring = ps[i].split(',')
+                            stress = map(float, psstring)
+                            key = int(stress[0]) - 1                            
+                            stress_dict['nr'][key] = float(stress[0])
+                            stress_dict['loc_x_glob_x'][key] = float(stress[1])
+                            stress_dict['loc_x_glob_y'][key] = float(stress[2])
+                            stress_dict['loc_x_glob_z'][key] = float(stress[3])                            
+                            stress_dict['loc_y_glob_x'][key] = float(stress[4])                                                        
+                            stress_dict['loc_y_glob_y'][key] = float(stress[5])
+                            stress_dict['loc_y_glob_z'][key] = float(stress[6])
+                            stress_dict['elem_typ'][key] = float(stress[7])
+                        
+                        gplist.append(stress_dict)  
+
+                    # Add stresses TOP to the structure
+                    filename = step + '_stresses_top.txt'
+                    
+                    isfile_filename=str(out_path) + "\\" + filename
+                                        
+                         
+                    if os.path.isfile(isfile_filename)==True:          
+                        psfile = open(os.path.join(out_path, filename), 'r')
+                        ps = psfile.readlines()
+                                       
+                        
+                        stress_dict = {'GP_name_top': {},'elem_nr_top': {}, 'sig_x_top': {}, 'sig_y_top': {}, 'tau_xy_top': {} , 'fcc_eff_top': {} , 'coor_intp_layer_x_top': {} , 'coor_intp_layer_y_top': {}, 'coor_intp_layer_z_top': {}} # sig_c1 and sig_c3  top an einem GP
+                        for i in range(len(ps)):
+                            psstring = ps[i].split(',')
+                            stress = map(float, psstring)
+                            key = int(stress[0]) - 1                            
+                            stress_dict['GP_name_top'][key] = float(stress[0])
+                            stress_dict['elem_nr_top'][key] = float(stress[1])
+                            stress_dict['sig_x_top'][key] = float(stress[2])
+                            stress_dict['sig_y_top'][key] = float(stress[3])                            
+                            stress_dict['tau_xy_top'][key] = float(stress[4])                                                        
+                            stress_dict['fcc_eff_top'][key] = float(stress[5])
+                            stress_dict['coor_intp_layer_x_top'][key] = float(stress[6])
+                            stress_dict['coor_intp_layer_y_top'][key] = float(stress[7])
+                            stress_dict['coor_intp_layer_z_top'][key] = float(stress[8])
+                        
+                        gplist.append(stress_dict)  
+                    
+                    # Add stresses TOP to the structure      
+                    filename = step + '_stresses_bot.txt'
+                    
+                    isfile_filename=str(out_path) + "\\" + filename
+                                        
+                         
+                    if os.path.isfile(isfile_filename)==True:          
+                        psfile = open(os.path.join(out_path, filename), 'r')
+                        ps = psfile.readlines()
+                                       
+                        
+                        stress_dict = {'GP_name_bot': {},'elem_nr_bot': {}, 'sig_x_bot': {}, 'sig_y_bot': {}, 'tau_xy_bot': {} , 'fcc_eff_bot': {} , 'coor_intp_layer_x_bot': {} , 'coor_intp_layer_y_bot': {}, 'coor_intp_layer_z_bot': {}} # sig_c1 and sig_c3  top an einem GP
                         for i in range(len(ps)):
                             psstring = ps[i].split(',')
                             stress = map(float, psstring)
                             key = int(stress[0]) - 1
-                            stress_dict['GP_name'][key] = float(stress[0])
-                            stress_dict['usedmodel'][key] = float(stress[1])
-                            stress_dict['sig_x_top'][key] = float(stress[2])
-                            stress_dict['sig_y_top'][key] = float(stress[3])                            
-                            stress_dict['tau_xy_top'][key] = float(stress[4])                                                        
-                            stress_dict['fcc_eff'][key] = float(stress[5])
-                            stress_dict['coor_intp_toplayer_x'][key] = float(stress[6])
-                            stress_dict['coor_intp_toplayer_y'][key] = float(stress[7])
-                            stress_dict['coor_intp_toplayer_z'][key] = float(stress[8])
-                          
-                        
+                            stress_dict['GP_name_bot'][key] = float(stress[0])
+                            stress_dict['elem_nr_bot'][key] = float(stress[1])
+                            stress_dict['sig_x_bot'][key] = float(stress[2])
+                            stress_dict['sig_y_bot'][key] = float(stress[3])                            
+                            stress_dict['tau_xy_bot'][key] = float(stress[4])                                                        
+                            stress_dict['fcc_eff_bot'][key] = float(stress[5])
+                            stress_dict['coor_intp_layer_x_bot'][key] = float(stress[6])
+                            stress_dict['coor_intp_layer_y_bot'][key] = float(stress[7])
+                            stress_dict['coor_intp_layer_z_bot'][key] = float(stress[8])                                                                      
                         
                         gplist.append(stress_dict)
                 
@@ -333,6 +420,9 @@ def extract_data(structure, fields, exe, output, return_data, components):
                 # 
                             
             #  Speichert nodal and element reuslts in die structure.result dict von Compas FEA. damit die Compas FEA Funktion rhino.plot_data() genutzt werden kann
+            
+
+                        
             # Nodal results
             if rlist:
                 structure.results[step]['nodal'] = {}
@@ -351,8 +441,16 @@ def extract_data(structure, fields, exe, output, return_data, components):
                 structure.results[step]['element'] = {}
                 structure.results[step]['element'].update(result_data[step]['element'])
             
-            
+            # element general infos
+
+            if elem_infos_list:
+                structure.results[step]['element_info'] = {}
+                for elem_infos_dict in elem_infos_list:
+                    for key in elem_infos_dict:
+                        structure.results[step]['element_info'][key] = elem_infos_dict[key]  
+
+
             toc = time() - tic
             print('Saving Ansys MAPDL results to the structure object successful in {0:.3f} s'.format(toc))
-            
+
         

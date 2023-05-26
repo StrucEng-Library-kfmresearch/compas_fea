@@ -26,6 +26,7 @@ from compas_fea.utilities import extrude_mesh
 from compas_fea.utilities import network_order
 from compas.rpc import Proxy
 
+
 if not compas.IPY:
     from compas_fea.utilities import meshing
     from compas_fea.utilities import functions
@@ -1146,7 +1147,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     toc2 = time() - tic
     print('Plot {1} results in Rhino successful in {0:.3f} s'.format(toc2,field))
 
-def plot_principal_stresses(structure, step, sp, stype, scale, layer=None):
+def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     """
     Plots the principal stresses of the elements.
 
@@ -1175,95 +1176,185 @@ def plot_principal_stresses(structure, step, sp, stype, scale, layer=None):
 
     """
     # Einlesen der Daten
-    data = structure.results[step]['GP']  
-    GP_name=data['GP_name']
-    sig_x=data['sig_x_top']  
-    sig_y=data['sig_y_top']  
-    tau_xy=data['tau_xy_top']  
-    fcc_eff=data['fcc_eff']     
-    coor_intp_toplayer_x=data['coor_intp_toplayer_x']     
-    coor_intp_toplayer_y=data['coor_intp_toplayer_y']     
-    coor_intp_toplayer_z=data['coor_intp_toplayer_z']
-
-    # EXAMPLE 1 TESTING CALL CPYTHON Code        
-    #numpy = Proxy('numpy')
-    #x = numpy.array([[11, 12, 5], [15, 6,10], [10, 8, 12], [12,15,8], [34, 78, 90]]) 
-    #print(x)
-    linalg = Proxy('numpy.linalg')
-    #norm = linalg.norm(x) 
-    #print(norm)
-
-    # EXMAPLE 2 Berechnung der Eigenwerte und der Eigenvektoren
-    #A = numpy.array([[11, 12], [15, 6]]) 
-
-    #ew, ev = linalg.eig(A)
-
-    # Proxy initialisierung 
-    #numpy = Proxy('numpy')
-    #linalg = Proxy('numpy.linalg')
-
-    # 1. Berechnung der Hauptspannungen (Eigenwertproblem)
-    #print(functions)
+    data = structure.results[step]['GP'] 
+        
+    # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
     
-    #functions.principal_stresses(data)
-    #print('hier')
+    if shell_layer == 'top':
+        fcc_eff=data['fcc_eff_top']     
+        coor_intp_layer_x=data['coor_intp_layer_x_top']     
+        coor_intp_layer_y=data['coor_intp_layer_y_top']     
+        coor_intp_layer_z=data['coor_intp_layer_z_top']
+        
+        
+    elif shell_layer == 'bot':  
+        fcc_eff=data['fcc_eff_bot']     
+        coor_intp_layer_x=data['coor_intp_layer_x_bot']     
+        coor_intp_layer_y=data['coor_intp_layer_y_bot']     
+        coor_intp_layer_z=data['coor_intp_layer_z_bot']               
+        
+    elem_nr=data['elem_nr_bot']
+    loc_x_glob_x=data['loc_x_glob_x']        
+    loc_x_glob_y=data['loc_x_glob_y'] 
+    loc_x_glob_z=data['loc_x_glob_z'] 
+    loc_y_glob_x=data['loc_y_glob_x']        
+    loc_y_glob_y=data['loc_y_glob_y'] 
+    loc_y_glob_z=data['loc_y_glob_z']  
+    elem_typ=data['elem_typ']   
+
+
+
+
+    # Aufbau Layer
+    # --------------------------------------------------------------------------
+    x_3_loc=[]
+    y_3_loc=[]
+    x_1_loc=[]
+    y_1_loc=[]
+
+    # Layer in Rhino erzeugen
+    if not layer:
+            layer = '{0}_principal_stresses_{1}_layer'.format(step, shell_layer)
+    rs.CurrentLayer(rs.AddLayer(layer))
+    rs.DeleteObjects(rs.ObjectsByLayer(layer))
+    rs.EnableRedraw(False)
+
+    # Berechnung der sHauptspannungen und dessen Richtungen (in lokalen Koordinaten)
+    # --------------------------------------------------------------------------
+    ew_top, ev_top, ew_bot, ev_bot, length_stress=functions.principal_stresses(data)  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+    
+    if shell_layer == 'top':
+        ew=ew_top
+        ev=ev_top
+    elif shell_layer == 'bot':  
+        ew=ew_bot
+        ev=ev_bot 
+
+    min_stress=min(min(ew))
+    max_stress=max(max(ew))
+
+        
+    # Ploten der Hauptspannung 3
+    # --------------------------------------------------------------------------
+    for b in range(length_stress): 
+        
+        
+              
+        elem_typ_GP=elem_typ[b]
         
 
+        if elem_typ_GP == 1: # 1=shell 0=MPR or others
+            coor_intp_layer_x_GP=coor_intp_layer_x[b]
+            coor_intp_layer_y_GP=coor_intp_layer_y[b]
+            coor_intp_layer_z_GP=coor_intp_layer_z[b]
+            loc_x_glob_x_GP=loc_x_glob_x[b]
+            loc_x_glob_y_GP=loc_x_glob_y[b]
+            loc_x_glob_z_GP=loc_x_glob_z[b]
+            loc_y_glob_x_GP=loc_y_glob_x[b]      
+            loc_y_glob_y_GP=loc_y_glob_y[b] 
+            loc_y_glob_z_GP=loc_y_glob_z[b]          
 
+            f_cc_eff_GP=fcc_eff[b]           
+
+            # Bestimmung aktuellen Hauptspannung 3
+            # TODO: axes anpassen; anpassung fur hauptspannung
+            
+            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+            T = Transformation.from_frame(f2)  
+            ev_GP=ev[b]
+            ew_GP=ew[b]       
+
+            sig_c3_GP=min(ew_GP)
+            index_c3_GP=ew_GP.index(sig_c3_GP)     
+            
+            # Vectors local coor
+            x_3_loc=ev_GP[0][index_c3_GP]*sig_c3_GP*scale
+            y_3_loc=ev_GP[1][index_c3_GP]*sig_c3_GP*scale
+            v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
+            v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
+            
+            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
+
+            
+            if sig_c3_GP <= -1*f_cc_eff_GP: # Druck und kleiner als fcc_eff 
+                id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                col3=[0,0,0]
+                rs.ObjectColor(id3, col3)
+            elif sig_c3_GP > -1*f_cc_eff_GP and sig_c3_GP <-0.001: # Druck aber grosser fcc_eff und kleiner 0            
+                id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                col3=[0,0,255]
+                rs.ObjectColor(id3, col3)
+            elif sig_c3_GP > 0: # Zug
+                # nicht plot
+                pass
+            
+                #rs.ObjectPrintWidthSource(id3,0.5)
+                #rs.ObjectPrintWidth(id3,10)
+            
+                # Folnder Command in Rhion ausfuhren falls liniendicke nicht angezeigt wird _PrintDisplay _State=_Toggle _Enter
+        else:
+            pass
+    
+    
+    # Ploten der Hauptspannung 1
+    # --------------------------------------------------------------------------
+    for b in range(length_stress): 
+        
+        elem_typ_GP=elem_typ[b]
+
+        if elem_typ_GP == 1: # 1=shell 0=MPR or others
+            coor_intp_layer_x_GP=coor_intp_layer_x[b]
+            coor_intp_layer_y_GP=coor_intp_layer_y[b]
+            coor_intp_layer_z_GP=coor_intp_layer_z[b]
+            loc_x_glob_x_GP=loc_x_glob_x[b]
+            loc_x_glob_y_GP=loc_x_glob_y[b]
+            loc_x_glob_z_GP=loc_x_glob_z[b]
+            loc_y_glob_x_GP=loc_y_glob_x[b]      
+            loc_y_glob_y_GP=loc_y_glob_y[b] 
+            loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+            f_cc_eff_GP=fcc_eff[b]           
+
+            # Bestimmung aktuellen Hauptspannung 1
+            # TODO: axes anpassen; anpassung fur hauptspannung
+
+            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+            T = Transformation.from_frame(f2)  
+            ev_GP=ev[b]
+            ew_GP=ew[b]       
+
+            sig_c1_GP=max(ew_GP)
+            index_c1_GP=ew_GP.index(sig_c1_GP)     
+            
+            # Vectors local coor
+            x_1_loc=ev_GP[0][index_c1_GP]*sig_c1_GP*scale
+            y_1_loc=ev_GP[1][index_c1_GP]*sig_c1_GP*scale
+            v_plus = Vector(x_1_loc*0.5, y_1_loc*0.5,0.).transformed(T)
+            v_minus = Vector(-x_1_loc*0.5, -y_1_loc*0.5,0.).transformed(T)
+            
+            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]              
+            
+            if sig_c1_GP <= -1*f_cc_eff_GP: # Druck und kleiner als fcc_eff 
+                id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
+                col1=[0,0,0]
+                rs.ObjectColor(id1, col1)
+            elif sig_c1_GP > -1*f_cc_eff_GP and sig_c1_GP <-0.001: # Druck aber grosser fcc_eff und kleiner 0            
+                id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
+                col1=[0,0,255]
+                rs.ObjectColor(id1, col1)
+            elif sig_c1_GP > 0: # Zug
+                # Bei Zug nicht Ploten
+                pass
+            
+                #rs.ObjectPrintWidthSource(id3,0.5)
+                #rs.ObjectPrintWidth(id3,10)
+            
+                # Folnder Command in Rhion ausfuhren falls liniendicke nicht angezeigt wird _PrintDisplay _State=_Toggle _Enter
+        else:
+            pass
+   
 
     
-
-    x = range(52)
-    tic=time()
-    for n in x:
-        data=n
-
-        aaaa=functions.principal_stresses(data)
-        print(aaaa)
-    toc = time() - tic
-    print(toc)
-    #    ew, ev = linalg.eig([[-11, 5], [5, 2]])
-        
-    #toc = time() - tic
-    #print(toc)
-    #for b in range(length_stress): # Start bei Null 0 bis length_stress-1
-    #    sig_x_GP=sig_x[b]
-    #    sig_y_GP=sig_y[b]
-    #    tau_xy_GP=tau_xy[b]
-    #    print(sig_x_GP)
-    #    print(sig_y_GP)
-    #    print(tau_xy_GP)
-
-    #    ew, ev = linalg.eig([[-11, 5], [5, 2]])
-    
-    #    print(ew)
-    #    print(ev)
-
-        
-        
-        # ew, ev = linalg.eig(stress_matrix) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
-
- 
-
-        #print(coor_intp_toplayer_x)
-        #print(coor_intp_toplayer_x[coor[0]])
-        #print(coor_intp_toplayer_x[1][1])
-        
-        
-        ### hier weiterfahren
-        # f2 = Frame([coor_intp_toplayer_x[coor[0]],coor_intp_toplayer_y[coor[0]],coor_intp_toplayer_z[coor[0]]], [1,0,0] , [0,1,0])
-        
-
-    #for c, centroid in enumerate(centroids):
-        #f2 = Frame(centroid, axes[c][0], axes[c][1])
-        # T = Transformation.from_frame(f2)
-        # v_plus = Vector(vectors[c][0]*0.5, vectors[c][1]*0.5, 0.).transformed(T)
-        # v_minus = Vector(-vectors[c][0]*0.5, -vectors[c][1]*0.5, 0.).transformed(T)
-        # id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
-        # col1 = colorbar(stresses[c] / max_stress, input='float', type=255)
-        # rs.ObjectColor(id1, col1)
-    #rs.EnableRedraw(True)
-
 
 def plot_voxels(structure, step, field='smises', cbar=[None, None], iptype='mean', nodal='mean', vdx=None, mode=''):
     """

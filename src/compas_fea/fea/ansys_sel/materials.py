@@ -38,17 +38,20 @@ class Materials(object):
 
         # Lesen der benotigten Geometrien
         t_set=[]
-
+        nn_layer_set=[]
         for key_prop in sorted(properties):
             #self.write_subsection(key_prop)
 
             property = properties[key_prop]
             section = sections[property.section]
             geometry = section.geometry  
-            nr_layers=section.nr_layers          
-            nn=nr_layers.get('nn', None)
-            
-            
+            nr_layers=section.nr_layers   
+
+            if nr_layers is not None:                
+                nn_layer_set.append(nr_layers.get('nn', None))
+            else:
+                nn_layer_set.append(None)
+
             if geometry is not None:
                 t_set.append(geometry.get('t', None))
             else:
@@ -80,7 +83,8 @@ class Materials(object):
                 E = material.E['E']
                 v = material.v['v']
                 p = material.p   
-                t=t_set[count_mat]                             
+                t=t_set[count_mat]  
+                nn=nn_layer_set[count_mat] 
                 G=E/(2*(1+v))
                 E111=5/6*G*t    
                 E221=5/6*G*t                     
@@ -109,7 +113,7 @@ class Materials(object):
                 uu = material.uu['uu']
                 
                 beton = material.beton['beton']
-                fcc = material.fcc['fcc']
+                fcc = material.fcc['fcc']                
                 vc = material.vc['vc']
                 ecu = material.ecu['ecu']
                 k_E = material.k_E['k_E']
@@ -192,7 +196,8 @@ class Materials(object):
                 E =Ec              
                 v = vc                
                 
-                t=t_set[count_mat]                                
+                t=t_set[count_mat]   
+                nn=nn_layer_set[count_mat]                              
                 h=t
                 G=E/(2*(1+v))
                 E111=5/6*G*t    
@@ -243,7 +248,7 @@ class Materials(object):
                 self.write_line('tbdata,43,{0},{1},{2}'.format(ka2, kb2, kc2))
                 self.write_line('tbdata,46,{0},{1},{2},{3},{4}'.format(stahl1, zm1, as1, dm1, psi1))
                 self.write_line('tbdata,51,{0},{1},{2},{3},{4}'.format(fsy1, fsu1, esu1, esv1, Es1))
-                self.write_line('tbdata,56,{0},{1},{2}'.format(ka1, kb1, kc1))            
+                self.write_line('tbdata,56,{0},{1},{2}'.format(ka1, kb1, kc1))                            
                 self.write_line('tbdata,59,{0},{1},{2},{3}'.format(beton, fcc, vc, ecu))            
                 self.write_line('tbdata,63,{0},{1},{2},{3}'.format(k_E, theta_b0, theta_b1, k_riss))  
                 self.write_line('tbdata,67,{0},{1},{2},{3},{4}'.format(lambdaTS, srmx, srmy, Begrenzung, Entfestigung))  

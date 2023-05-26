@@ -309,6 +309,7 @@ class MPCSection(Section):
         self.__name__ = 'MPCSection'
         self.name = name
         self.geometry = None
+        self.nr_layers= None
 
 
 
