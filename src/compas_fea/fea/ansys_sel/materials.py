@@ -28,85 +28,50 @@ class Materials(object):
         element_set = self.structure.sets
         properties = self.structure.element_properties
         sections = self.structure.sections
-        
+        elsets=self.structure.sets
 
-        # Lesen der secnum
-        ele_prop=[]
-        
-        for key_ele_prop in sorted(properties):
-            ele_prop.append(key_ele_prop)
 
-        # Lesen der benotigten Geometrien
-        t_set=[]
-        nn_layer_set=[]
+        count_mat=0 # Dies wird nur fur die Bestimmung der Materialnummer verwendet in Ansys (daher auch start bei 0 (ansys) und nicht bei -1 (python)). count_mat wird NICHT fur das Auslesen von Materaildaten verwenden, da sonst Probleme mit der sortierung auftreten
         for key_prop in sorted(properties):
-            #self.write_subsection(key_prop)
-
-            property = properties[key_prop]
-            section = sections[property.section]
-            geometry = section.geometry  
-            nr_layers=section.nr_layers   
-
-            if nr_layers is not None:                
-                nn_layer_set.append(nr_layers.get('nn', None))
-            else:
-                nn_layer_set.append(None)
-
-            if geometry is not None:
-                t_set.append(geometry.get('t', None))
-            else:
-                t_set.append(None)
-        
-        
-        # Lesen der vorhandenen element sets
-        ele_set=[]
-        for key_set in sorted(self.structure.sets):
-                        
-            element_set = self.structure.sets[key_set]
-            if element_set.type != 'node': 
-                #self.write_subsection(key_set)
-                ele_set.append(key_set)
-
-        # Start Schlaufe zur Zuweisung Material zu Element sets                
-        count_mat=-1
-        for key, material in sorted(materials.items()):
             
-
-
-            # ------------------------------------------------------------------------------------------------------
-            # Material and element properties einlesen
-            # ------------------------------------------------------------------------------------------------------
             count_mat=count_mat+1
+            
+            # Bestimmung des materialtypes (mtype)
+            property = properties[key_prop]
+            material = materials[property.material]            
             mtype = material.__name__
 
+            # Bestimmung der Geometrie
+            section = sections[property.section]
+            geometry = section.geometry             
+
+            # Bestimmung der element set 
+            elset=elsets[property.elset]
+            ele_set=elset.name
+            
+            # ------------------------------------------------------------------------------------------------------
+            # Material and element properties einlesen
+            # ------------------------------------------------------------------------------------------------------                        
             if mtype == 'ElasticIsotropic':  
                 E = material.E['E']
                 v = material.v['v']
                 p = material.p   
-                t=t_set[count_mat]  
-                nn=nn_layer_set[count_mat] 
+                t=geometry.get('t', None)  
+                nn=section.nr_layers 
                 G=E/(2*(1+v))
                 E111=5/6*G*t    
                 E221=5/6*G*t                     
                 E121=0                
                 delta_h=t/nn
                 
-                self.write_subsection(key)
-            
-            elif mtype == 'MPCStiff':  
+                self.write_subsection(material.name)      
 
+            elif mtype == 'MPCStiff':                  
                 self.blank_line()
                 self.write_line('!No Material properties for MPCs are needed') 
-                self.blank_line()                                
-            
-            elif mtype == 'CMMUsermat':                  
-                
-                
-                # Dies noch anpassen delten
+                self.blank_line()   
 
-
-
-                # HIER WEITRFAHREN MIT ANDEREN PARAMETER
+            elif mtype == 'CMMUsermat':  
                 R_Rohr = material.R_Rohr['R_Rohr']
                 rho = material.rho['rho']
                 oo = material.oo['oo']
@@ -196,8 +161,9 @@ class Materials(object):
                 E =Ec              
                 v = vc                
                 
-                t=t_set[count_mat]   
-                nn=nn_layer_set[count_mat]                              
+                t=geometry.get('t', None)  
+                nr_layer=section.nr_layers   
+                nn=nr_layer.get('nn', None)
                 h=t
                 G=E/(2*(1+v))
                 E111=5/6*G*t    
@@ -206,24 +172,25 @@ class Materials(object):
                 
                 delta_h=t/nn
 
-                self.write_subsection(key)
-
+                
+                self.write_subsection(material.name)       
+            
 
             # ------------------------------------------------------------------------------------------------------
             # material properties schreiben
             # ------------------------------------------------------------------------------------------------------
-
+            
             if mtype == 'ElasticIsotropic':                
                 self.blank_line()
-                self.write_line('mp,ex,{0},{1}'.format(count_mat+1, E))
-                self.write_line('mp,ey,{0},{1}'.format(count_mat+1, E))
-                self.write_line('mp,prxy,{0},{1}'.format(count_mat+1, v))
-                self.write_line('mp,dens,{0},{1}'.format(count_mat+1, p))
+                self.write_line('mp,ex,{0},{1}'.format(count_mat, E))
+                self.write_line('mp,ey,{0},{1}'.format(count_mat, E))
+                self.write_line('mp,prxy,{0},{1}'.format(count_mat, v))
+                self.write_line('mp,dens,{0},{1}'.format(count_mat, p))
                 self.blank_line()
 
                 self.write_line('allsel')  
-                self.write_line('cmsel,s, {0}, elem'.format(ele_set[count_mat]))  
-                self.write_line('mpchg,{0},all'.format(count_mat+1))
+                self.write_line('cmsel,s, {0}, elem'.format(ele_set))  
+                self.write_line('mpchg,{0},all'.format(count_mat))
 
             elif mtype == 'MPCStiff':
                 self.blank_line()
@@ -233,7 +200,7 @@ class Materials(object):
             elif mtype == 'CMMUsermat':
 
                 self.blank_line()
-                self.write_line('tb,user,{0},1,76'.format(count_mat+1))
+                self.write_line('tb,user,{0},1,76'.format(count_mat))
                 self.write_line('tbtemp,0')
                 self.write_line('tbdata,1,{0},{1}'.format(Dimens, Modell))
                 self.write_line('tbdata,3,{0},{1},{2},{3}'.format(nn, h, oo, uu))
@@ -254,13 +221,13 @@ class Materials(object):
                 self.write_line('tbdata,67,{0},{1},{2},{3},{4}'.format(lambdaTS, srmx, srmy, Begrenzung, Entfestigung))  
                 self.write_line('tbdata,72,{0},{1},{2},{3}'.format(winkelD, KritQ, k_vr, fswy)) 
                 self.write_line('tbdata,76,{0}'.format(R_Rohr)) 
-                self.write_line('tb,state,{0},,72'.format(count_mat+1))
-                self.write_line('mp,dens,{0},{1}'.format(count_mat+1, rho))
+                self.write_line('tb,state,{0},,72'.format(count_mat))
+                self.write_line('mp,dens,{0},{1}'.format(count_mat, rho))
                 self.blank_line()
 
                 self.write_line('allsel')  
-                self.write_line('cmsel,s, {0}, elem'.format(ele_set[count_mat]))  
-                self.write_line('mpchg,{0},all'.format(count_mat+1))                   
+                self.write_line('cmsel,s, {0}, elem'.format(ele_set))  
+                self.write_line('mpchg,{0},all'.format(count_mat))                   
 
             # ------------------------------------------------------------------------------------------------------
             # element properties schreiben
@@ -274,11 +241,11 @@ class Materials(object):
             if mtype in ['ElasticIsotropic', 'ElasticPlastic', 'Steel', 'Concrete', 'Stiff',
                          'ConcreteSmearedCrack', 'ConcreteDamagedPlasticity', 'CMMUsermat']:
 
-                self.write_line('sectype,{0} , shell'.format(count_mat+1))
+                self.write_line('sectype,{0} , shell'.format(count_mat))
                 self.write_line('seccontrols,{0},{1},{2},,1,1,1'.format(E111, E221, E121))
                 self.blank_line()
                 self.write_line('*do,j,1,{0}'.format(nn))
-                self.write_line('secdata,{0},{1},0,,,j'.format(delta_h,count_mat+1))
+                self.write_line('secdata,{0},{1},0,,,j'.format(delta_h,count_mat))
                 self.write_line('secoffset,mid')
                 self.write_line('*enddo')       
 
@@ -313,7 +280,6 @@ class Materials(object):
 
         self.blank_line()
         self.blank_line()
-
 
 
 
