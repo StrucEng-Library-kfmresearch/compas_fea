@@ -43,7 +43,8 @@ class Materials(object):
 
             # Bestimmung der Geometrie
             section = sections[property.section]
-            geometry = section.geometry             
+            geometry = section.geometry
+       
 
             # Bestimmung der element set 
             elset=elsets[property.elset]
@@ -237,16 +238,18 @@ class Materials(object):
 
             # Shell
             # -------
+            
 
             if mtype in ['ElasticIsotropic', 'ElasticPlastic', 'Steel', 'Concrete', 'Stiff',
                          'ConcreteSmearedCrack', 'ConcreteDamagedPlasticity', 'CMMUsermat']:
+
 
                 self.write_line('sectype,{0} , shell'.format(count_mat))
                 self.write_line('seccontrols,{0},{1},{2},,1,1,1'.format(E111, E221, E121))
                 self.blank_line()
                 self.write_line('*do,j,1,{0}'.format(nn))
                 self.write_line('secdata,{0},{1},0,,,j'.format(delta_h,count_mat))
-                self.write_line('secoffset,mid')
+                self.write_line('secoffset,{}'.format(section.offset['mode']))
                 self.write_line('*enddo')       
 
             # MPC

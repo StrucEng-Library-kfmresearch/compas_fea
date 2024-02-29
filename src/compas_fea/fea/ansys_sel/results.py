@@ -142,7 +142,7 @@ class Results(object):
             self.write_line('! ')
             cFile.close()
 
-            # Write Displacement at nodes
+            # Write DISPLACEMENTS at nodes
             # ------------------------------------------------------------------
             if 'u' in fields or 'all' in fields:
                 fname = str(step_name) + '_' + 'displacements'
@@ -177,7 +177,7 @@ class Results(object):
                 self.write_line('!')
                 cFile.close()
 
-            # Write Shell forces and moments (only for Shell elements)
+            # Write SHELL FORCES AND MOMENTS (only for Shell elements)
             # ------------------------------------------------------------------
             if 'sf' in fields or 'all' in fields:
 
@@ -236,7 +236,7 @@ class Results(object):
                 self.write_line('! ')
                 cFile.close()
         
-            # Write stresses at each GP from usermat results
+            # Write STRESSES at top and bottom Elementlayer from usermat results
             # ------------------------------------------------------------------               
             if 's' in fields or 'all' in fields:
 
@@ -513,7 +513,6 @@ class Results(object):
 
                 self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')                         
                   
-
                 self.write_line('NSLE,ALL')
                 self.write_line('*GET,NrN,NODE,0,COUNT ')
                 self.write_line('*DIM,N_N,ARRAY,NrN,1')
@@ -597,6 +596,378 @@ class Results(object):
           
             else:
                 pass 
+
+            # Write STRAINS at top and bottom Elementlayer from usermat results
+            # ------------------------------------------------------------------               
+            if 'eps' in fields or 'all' in fields:
+
+                # Top Layer (nn)
+                # --------------------------------------------
+                fname = str(step_name) + '_' + 'strains_top'
+                name_ = 'eps_GP'
+                name_elem_nr = 'elem_nr'
+                name_eps_1 = 'eps_1'
+                name_eps_3 = 'eps_3'
+                name_coor_intp_layer_x ='coor_intp_layer_x'
+                name_coor_intp_layer_y ='coor_intp_layer_y'
+                name_coor_intp_layer_z ='coor_intp_layer_z'
+
+        
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write strains in Shell Elements')
+                self.blank_line()
+                
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
+
+                # Aufbau der Arrays
+                self.write_line('*DIM,eps_1,ARRAY,4*NrE,1')
+                self.write_line('*DIM,eps_3,ARRAY,4*NrE,1')
+
+                self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                self.write_line('*DIM,coor_intp_layer_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_z,ARRAY,4*NrE,1')               
+  
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE') # Loop uber alle Elemente                
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                
+                self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')          
+                
+                # (NrT: Shell ID, NrL=Numbers of Layer) 
+                self.write_line('*GET, NrT, ELEM,N_E(ii), attr, secn') # gibt zu einem Element zugehorgie secnum
+                self.write_line('*GET, NrL, SHEL, NrT, Prop,NLAY ') # NrT is equal to secnum (not Element number)
+                            
+
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')
+
+                self.write_line('LAYER,NrL')
+                self.write_line('elem_nr(aux,1)=N_E(ii)')                                
+                self.write_line('*GET,eps_1(aux,1),NODE,N_N(kk),SVAR,5')
+                self.write_line('*GET,eps_3(aux,1),NODE,N_N(kk),SVAR,6')
+                self.write_line('*GET,coor_intp_layer_x(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_intp_layer_y(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_intp_layer_z(aux,1),NODE,N_N(kk),SVAR,65')               
+
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR') 
+                self.write_line('*else')    
+                self.write_line('*endif')                      
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_eps_1 + '(1) , \',\' ,' + name_eps_3 + '(1) , \',\' ,'+ name_coor_intp_layer_x + '(1) , \',\' ,'  + name_coor_intp_layer_y + '(1) , \',\' ,' + name_coor_intp_layer_z + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close()      
+
+                # Bot Layer (1)
+                # --------------------------------------------
+                fname = str(step_name) + '_' + 'strains_bot'
+                name_ = 'eps_GP'
+                name_elem_nr = 'elem_nr'
+                name_eps_1 = 'eps_1'
+                name_eps_3 = 'eps_3'
+                name_coor_intp_layer_x ='coor_intp_layer_x'
+                name_coor_intp_layer_y ='coor_intp_layer_y'
+                name_coor_intp_layer_z ='coor_intp_layer_z'
+
+        
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write strains in Shell Elements')
+                self.blank_line()
+                
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
+
+                # Aufbau der Arrays
+                self.write_line('*DIM,eps_1,ARRAY,4*NrE,1')
+                self.write_line('*DIM,eps_3,ARRAY,4*NrE,1')
+
+                self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                self.write_line('*DIM,coor_intp_layer_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_z,ARRAY,4*NrE,1')               
+  
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE') # Loop uber alle Elemente                
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                
+                self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')          
+                
+                # (NrT: Shell ID, NrL=Numbers of Layer) 
+                self.write_line('*GET, NrT, ELEM,N_E(ii), attr, secn') # gibt zu einem Element zugehorgie secnum
+                self.write_line('*GET, NrL, SHEL, NrT, Prop,NLAY ') # NrT is equal to secnum (not Element number)
+                            
+
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')
+
+                self.write_line('LAYER,1')
+                self.write_line('elem_nr(aux,1)=N_E(ii)')                                
+                self.write_line('*GET,eps_1(aux,1),NODE,N_N(kk),SVAR,5')
+                self.write_line('*GET,eps_3(aux,1),NODE,N_N(kk),SVAR,6')
+                self.write_line('*GET,coor_intp_layer_x(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_intp_layer_y(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_intp_layer_z(aux,1),NODE,N_N(kk),SVAR,65')               
+
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR') 
+                self.write_line('*else')    
+                self.write_line('*endif')                      
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_eps_1 + '(1) , \',\' ,' + name_eps_3 + '(1) , \',\' ,'+ name_coor_intp_layer_x + '(1) , \',\' ,'  + name_coor_intp_layer_y + '(1) , \',\' ,' + name_coor_intp_layer_z + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close()    
+          
+            else:
+                pass 
+
+            # Write STEEL STRESSES at reinforcement Layer 1-4 from usermat results
+            # ------------------------------------------------------------------               
+            if 'sig_sr' in fields or 'all' in fields:
+
+                # Reinforcement Layer 1
+                # --------------------------------------------
+                fname_1L = str(step_name) + '_' + 'sig_sr_1L'
+                fname_2L = str(step_name) + '_' + 'sig_sr_2L'
+                fname_3L = str(step_name) + '_' + 'sig_sr_3L'
+                fname_4L = str(step_name) + '_' + 'sig_sr_4L'
+                name_ = 'sig_sr_GP'
+                name_elem_nr = 'elem_nr'
+                name_sig_sr_1L_x = 'sig_sr_1L_x'
+                name_sig_sr_2L_x = 'sig_sr_2L_x'
+                name_sig_sr_3L_x = 'sig_sr_3L_x'
+                name_sig_sr_4L_x = 'sig_sr_4L_x'
+                name_sig_sr_1L_y = 'sig_sr_1L_y'
+                name_sig_sr_2L_y = 'sig_sr_2L_y'
+                name_sig_sr_3L_y = 'sig_sr_3L_y'
+                name_sig_sr_4L_y = 'sig_sr_4L_y'
+                name_coor_x_sig_sr_1L ='coor_x_sig_sr_1L'
+                name_coor_y_sig_sr_1L ='coor_y_sig_sr_1L'
+                name_coor_z_sig_sr_1L ='coor_z_sig_sr_1L'
+                name_coor_x_sig_sr_2L ='coor_x_sig_sr_2L'
+                name_coor_y_sig_sr_2L ='coor_y_sig_sr_2L'
+                name_coor_z_sig_sr_2L ='coor_z_sig_sr_2L'
+                name_coor_x_sig_sr_3L ='coor_x_sig_sr_3L'
+                name_coor_y_sig_sr_3L ='coor_y_sig_sr_3L'
+                name_coor_z_sig_sr_3L ='coor_z_sig_sr_3L'    
+                name_coor_x_sig_sr_4L ='coor_x_sig_sr_4L'
+                name_coor_y_sig_sr_4L ='coor_y_sig_sr_4L'
+                name_coor_z_sig_sr_4L ='coor_z_sig_sr_4L'                              
+
+        
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write steel stresses at crackes in Shell Elements')
+                self.blank_line()
+                
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
+
+                # Aufbau der Arrays
+                self.write_line('*DIM,sig_sr_1L_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_2L_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_3L_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_4L_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_1L_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_2L_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_3L_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_4L_y,ARRAY,4*NrE,1')
+    
+                self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                self.write_line('*DIM,coor_x_sig_sr_1L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_y_sig_sr_1L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_z_sig_sr_1L,ARRAY,4*NrE,1')   
+                self.write_line('*DIM,coor_x_sig_sr_2L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_y_sig_sr_2L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_z_sig_sr_2L,ARRAY,4*NrE,1')    
+                self.write_line('*DIM,coor_x_sig_sr_3L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_y_sig_sr_3L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_z_sig_sr_3L,ARRAY,4*NrE,1') 
+                self.write_line('*DIM,coor_x_sig_sr_4L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_y_sig_sr_4L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_z_sig_sr_4L,ARRAY,4*NrE,1')                                                      
+  
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE') # Loop uber alle Elemente                
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                
+                self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')          
+                                           
+
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')
+
+                self.write_line('*GET,layer_nr_1L,NODE,N_N(kk),SVAR,58')
+                self.write_line('*GET,layer_nr_2L,NODE,N_N(kk),SVAR,59')
+                self.write_line('*GET,layer_nr_3L,NODE,N_N(kk),SVAR,60')
+                self.write_line('*GET,layer_nr_4L,NODE,N_N(kk),SVAR,61')
+                self.write_line('elem_nr(aux,1)=N_E(ii)') 
+
+                # Layer 1 for x- and y direction
+                self.write_line('LAYER,layer_nr_1L')
+                self.write_line('*GET,sig_sr_1L_Druck_x,NODE,N_N(kk),SVAR,13')
+                self.write_line('*GET,sig_sr_1L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
+                self.write_line('*GET,sig_sr_1L_DruckZug_x,NODE,N_N(kk),SVAR,34')
+                self.write_line('*GET,sig_sr_1L_Zug_x,NODE,N_N(kk),SVAR,40')
+                self.write_line('sig_sr_1L_x(aux,1)=sig_sr_1L_Druck_x+sig_sr_1L_Druckfeld_x+sig_sr_1L_DruckZug_x+sig_sr_1L_Zug_x')
+                self.write_line('*GET,sig_sr_1L_Druck_y,NODE,N_N(kk),SVAR,14')
+                self.write_line('*GET,sig_sr_1L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
+                self.write_line('*GET,sig_sr_1L_DruckZug_y,NODE,N_N(kk),SVAR,35')
+                self.write_line('*GET,sig_sr_1L_Zug_y,NODE,N_N(kk),SVAR,41')
+                self.write_line('sig_sr_1L_y(aux,1)=sig_sr_1L_Druck_y+sig_sr_1L_Druckfeld_y+sig_sr_1L_DruckZug_y+sig_sr_1L_Zug_y')
+                self.write_line('*GET,coor_x_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_y_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_z_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,65')                  
+                
+                # Layer 2 for x- and y direction
+                self.write_line('LAYER,layer_nr_2L')
+                self.write_line('*GET,sig_sr_2L_Druck_x,NODE,N_N(kk),SVAR,13')
+                self.write_line('*GET,sig_sr_2L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
+                self.write_line('*GET,sig_sr_2L_DruckZug_x,NODE,N_N(kk),SVAR,34')
+                self.write_line('*GET,sig_sr_2L_Zug_x,NODE,N_N(kk),SVAR,40')
+                self.write_line('sig_sr_2L_x(aux,1)=sig_sr_2L_Druck_x+sig_sr_2L_Druckfeld_x+sig_sr_2L_DruckZug_x+sig_sr_2L_Zug_x')
+                self.write_line('*GET,sig_sr_2L_Druck_y,NODE,N_N(kk),SVAR,14')
+                self.write_line('*GET,sig_sr_2L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
+                self.write_line('*GET,sig_sr_2L_DruckZug_y,NODE,N_N(kk),SVAR,35')
+                self.write_line('*GET,sig_sr_2L_Zug_y,NODE,N_N(kk),SVAR,41')
+                self.write_line('sig_sr_2L_y(aux,1)=sig_sr_2L_Druck_y+sig_sr_2L_Druckfeld_y+sig_sr_2L_DruckZug_y+sig_sr_2L_Zug_y')
+                self.write_line('*GET,coor_x_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_y_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_z_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,65')     
+
+                # Layer 3 for x- and y direction
+                self.write_line('LAYER,layer_nr_3L')
+                self.write_line('*GET,sig_sr_3L_Druck_x,NODE,N_N(kk),SVAR,13')
+                self.write_line('*GET,sig_sr_3L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
+                self.write_line('*GET,sig_sr_3L_DruckZug_x,NODE,N_N(kk),SVAR,34')
+                self.write_line('*GET,sig_sr_3L_Zug_x,NODE,N_N(kk),SVAR,40')
+                self.write_line('sig_sr_3L_x(aux,1)=sig_sr_3L_Druck_x+sig_sr_3L_Druckfeld_x+sig_sr_3L_DruckZug_x+sig_sr_3L_Zug_x')
+                self.write_line('*GET,sig_sr_3L_Druck_y,NODE,N_N(kk),SVAR,14')
+                self.write_line('*GET,sig_sr_3L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
+                self.write_line('*GET,sig_sr_3L_DruckZug_y,NODE,N_N(kk),SVAR,35')
+                self.write_line('*GET,sig_sr_3L_Zug_y,NODE,N_N(kk),SVAR,41')
+                self.write_line('sig_sr_3L_y(aux,1)=sig_sr_3L_Druck_y+sig_sr_3L_Druckfeld_y+sig_sr_3L_DruckZug_y+sig_sr_3L_Zug_y')
+                self.write_line('*GET,coor_x_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_y_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_z_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,65')     
+
+                # Layer 4 for x- and y direction
+                self.write_line('LAYER,layer_nr_4L')
+                self.write_line('*GET,sig_sr_4L_Druck_x,NODE,N_N(kk),SVAR,13')
+                self.write_line('*GET,sig_sr_4L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
+                self.write_line('*GET,sig_sr_4L_DruckZug_x,NODE,N_N(kk),SVAR,34')
+                self.write_line('*GET,sig_sr_4L_Zug_x,NODE,N_N(kk),SVAR,40')
+                self.write_line('sig_sr_4L_x(aux,1)=sig_sr_4L_Druck_x+sig_sr_4L_Druckfeld_x+sig_sr_4L_DruckZug_x+sig_sr_4L_Zug_x')
+                self.write_line('*GET,sig_sr_4L_Druck_y,NODE,N_N(kk),SVAR,14')
+                self.write_line('*GET,sig_sr_4L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
+                self.write_line('*GET,sig_sr_4L_DruckZug_y,NODE,N_N(kk),SVAR,35')
+                self.write_line('*GET,sig_sr_4L_Zug_y,NODE,N_N(kk),SVAR,41')
+                self.write_line('sig_sr_4L_y(aux,1)=sig_sr_4L_Druck_y+sig_sr_4L_Druckfeld_y+sig_sr_4L_DruckZug_y+sig_sr_4L_Zug_y')
+                self.write_line('*GET,coor_x_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_y_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_z_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,65')          
+
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR') 
+                self.write_line('*else')    
+                self.write_line('*endif')                      
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname_1L + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_1L_x + '(1) , \',\' , ' + name_sig_sr_1L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_1L + '(1) , \',\' ,'+ name_coor_y_sig_sr_1L + '(1) , \',\' ,'  + name_coor_z_sig_sr_1L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname_2L + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_2L_x + '(1) , \',\' , ' + name_sig_sr_2L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_2L + '(1) , \',\' ,'+ name_coor_y_sig_sr_2L + '(1) , \',\' ,'  + name_coor_z_sig_sr_2L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')                
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname_3L + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_3L_x + '(1) , \',\' , ' + name_sig_sr_3L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_3L + '(1) , \',\' ,'+ name_coor_y_sig_sr_3L + '(1) , \',\' ,'  + name_coor_z_sig_sr_3L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')   
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname_4L + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_4L_x + '(1) , \',\' , ' + name_sig_sr_4L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_4L + '(1) , \',\' ,'+ name_coor_y_sig_sr_4L + '(1) , \',\' ,'  + name_coor_z_sig_sr_4L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')   
+
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close()      
+
+            else:
+                pass             
 
         self.blank_line()
         self.blank_line()

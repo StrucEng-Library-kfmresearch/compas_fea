@@ -892,6 +892,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     - Pipe visualisation of line elements is not based on the element section.
 
     """
+   
     step=lstep
     tic=time()
     if field in ['smaxp', 'smises']:
@@ -1024,12 +1025,12 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
         #print(data)
         dtype = 'element'
 
-
+    
 
     # Postprocess
     
     result = functions.postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, 255, iptype, nodal)
-
+    print('here we go')
     try:
         toc, U, cnodes, fabs, fscaled, celements, eabs = result
         #print('\n***** Data processed : {0} s *****'.format(toc))
