@@ -560,7 +560,7 @@ loc coor
             raise NotImplementedError
 
 
-    def analyse(self, software, exe=None, cpus=4, license='research', delete=True, output=True):
+    def analyse(self, software, exe=None, cpus=4, license='research', delete=True, output=True, error_found=False, ansys_version=None):
         """Runs the analysis through the chosen FEA software / library.
 
         Parameters
@@ -577,6 +577,8 @@ loc coor
             -
         output : bool
             Print terminal output.
+        ansys_version: string
+            Ansys version that shoul be used. (e.g. '24' for version 2024 (v241))
 
         Returns
         -------
@@ -587,13 +589,15 @@ loc coor
 
         if software == 'ansys_sel':
             cpus = 1 if license == 'student' else cpus
-            ansys_sel.launch_process(self, exe=exe, cpus=cpus, output=output)            
+            error_found=ansys_sel.launch_process(self, exe=exe, cpus=cpus, output=output, ansys_version=ansys_version)            
 
         else:
             raise NotImplementedError
         
+        return error_found
+        
     def extract_data(self, software, fields='u', steps='all', exe=None, sets=None, license='research', output=True,
-                     return_data=True, components=None):
+                     return_data=True, components=None, error_found=False):
         """Extracts data from the analysis output files.
 
         Parameters
@@ -626,13 +630,13 @@ loc coor
 
         if software == 'ansys_sel':
             ansys_sel.extract_data(self, fields=fields, exe=exe, output=output, return_data=return_data,
-                              components=components)                              
+                              components=components, error_found=error_found)                              
 
         else:
             raise NotImplementedError
 
     def analyse_and_extract(self, software, fields='u', exe=None, cpus=4, license='research', output=True, save=False,
-                            return_data=True, components=None, ndof=6, lstep = 'last', sbstep = 'last'):
+                            return_data=True, components=None, ndof=6, lstep = 'last', sbstep = 'last', ansys_version=None):
         """Runs the analysis through the chosen FEA software / library and extracts data.
 
         Parameters
@@ -657,6 +661,8 @@ loc coor
             Specific components to extract from the fields data.
         step : list
             For which load step(s) the results are extracted to a txt.
+        ansys_version: string
+            Ansys version that shoul be used. (e.g. '24' for version 2024 (v241))
 
         Returns
         -------
@@ -666,10 +672,10 @@ loc coor
 
         self.write_input_file(software=software, fields=fields, output=output, save=save, ndof=ndof, lstep=lstep, sbstep=sbstep)
 
-        self.analyse(software=software, exe=exe, cpus=cpus, license=license, output=output)
-
+        error_found=self.analyse(software=software, exe=exe, cpus=cpus, license=license, output=output, ansys_version=ansys_version)
+        print('Error was found:', error_found)
         self.extract_data(software=software, fields=fields, exe=exe, license=license, output=output,
-                          return_data=return_data, components=components)
+                          return_data=return_data, components=components, error_found=error_found)
 
     # ==============================================================================
     # Results
