@@ -57,7 +57,7 @@ __all__ = [
     'plot_volmesh',
     'plot_axes',
     'plot_data',
-    'plot_principal_stresses',
+    'plot_principal',
     'plot_voxels',
     'weld_meshes_from_layer',
 ]
@@ -1030,7 +1030,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     # Postprocess
     
     result = functions.postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, 255, iptype, nodal)
-    print('here we go')
+    
     try:
         toc, U, cnodes, fabs, fscaled, celements, eabs = result
         #print('\n***** Data processed : {0} s *****'.format(toc))
@@ -1148,7 +1148,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     toc2 = time() - tic
     print('Plot {1} results in Rhino successful in {0:.3f} s'.format(toc2,field))
 
-def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
+def plot_principal(structure, step, shell_layer, scale, layer=None):
     """
     Plots the principal stresses of the elements.
 
@@ -1178,7 +1178,7 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     """
     # Einlesen der Daten
     data = structure.results[step]['GP'] 
-        
+    
     # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
     
     if shell_layer == 'top':
@@ -1223,7 +1223,7 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     # Berechnung der sHauptspannungen und dessen Richtungen (in lokalen Koordinaten)
     # --------------------------------------------------------------------------
     ew_top, ev_top, ew_bot, ev_bot, length_stress=functions.principal_stresses(data)  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
-    
+  
     if shell_layer == 'top':
         ew=ew_top
         ev=ev_top
@@ -1259,12 +1259,14 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
 
             # Bestimmung aktuellen Hauptspannung 3
             # TODO: axes anpassen; anpassung fur hauptspannung
-            
+  
+
+
             f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
             T = Transformation.from_frame(f2)  
             ev_GP=ev[b]
             ew_GP=ew[b]       
-
+            
             sig_c3_GP=min(ew_GP)
             index_c3_GP=ew_GP.index(sig_c3_GP)     
             
@@ -1274,8 +1276,8 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
             v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
             v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
             
+            
             centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
-
             
             if sig_c3_GP <= -1*f_cc_eff_GP: # Druck und kleiner als fcc_eff 
                 id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   

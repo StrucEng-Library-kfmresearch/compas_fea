@@ -27,122 +27,127 @@ class Results(object):
         sections = self.structure.sections
         properties = self.structure.element_properties
 
-        # Write intro part
+        # Write part Results
         self.write_section('Results')
         self.blank_line()
-        
         self.write_line('/post1')
 
+        # Delete existing (old) output files
+        name = structure.name
+        path = structure.path
+        filename = name + '_extract.txt'
+        out_path = os.path.join(path, name + '_output')
+        dir = out_path
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
+        else:
+            for f in os.listdir(dir):
+                os.remove(os.path.join(dir, f))
+    
 
-        # Schleife uber alle vorhandenen loadsteps
+        # Check divergency
+        self.write_section('Check divergency')
+        self.write_line('! ----------------')
+        self.blank_line()
+        self.write_line('set,last,last')
+        self.write_line('*GET,Sol_,ACTIVE,0,SOLU,CNVG')  
+        self.blank_line()
 
-        # Bestimmung der lstep und sbstep welche als txt gespeichert werden sollen
-        sbstep=sbstep # Substep
-        step_list=structure.steps_order
         
-        # Schleife uber alle vorhandenen loadsteps
-        for single_lstep in lstep:
+        # ------------------------------------------------------------------
+        # Save general Element infos, ... (MAYBE TO REMOVE)
+        # ------------------------------------------------------------------
+        elements = self.structure.elements
+        num_elements = len(elements)
+        properties = self.structure.element_properties
+        sections = self.structure.sections
+        sets = self.structure.sets
+        
+        self.write_line('*DIM,elem_infos,ARRAY,{0},8'.format(num_elements))   
+        fname = 'elem_infos'
+        name_ = 'elem_infos'
             
+        # Bestimmung der elementspezifischen Werte
+        for key in sorted(properties):
+            property = properties[key]
+            section = sections[property.section]
+            stype = section.__name__
+            elset = property.elset
+            element_set = sets[property.elset]
+            selection = property.elements if property.elements else sets[elset].selection # Zum elemeset zugehorige Elementnummern
+             
+            if stype == 'ShellSection':
+                stype_number=1 # Schalenelement
+            else:
+                stype_number=0 # MPC or Other
+
+            
+            for ele_num in sorted(selection):                    
+                ele_num_adj=ele_num+1
+
+                if stype_number == 1: # Schalenelement
+                    loc_coor_EV_XA= section.loc_coords_EV_XA
+                    loc_coor_EV_YA= section.loc_coords_EV_YA
+                    loc_coor_EV_ZA= section.loc_coords_EV_ZA
+                       
+
+                    if element_set.type != 'node':   
+                        e_x=loc_coor_EV_XA.get('EV_XA',None)
+                        e_y=loc_coor_EV_YA.get('EV_YA',None)
+                        e_z=loc_coor_EV_ZA.get('EV_ZA',None)
+                        
+                    self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=1, mpc and other =0'.format(ele_num_adj,stype_number))   # Elementype     
+                    self.write_line('elem_infos({0},2)={1} ! Elementnumber'.format(ele_num_adj,ele_num_adj))   # Elementnumber 
+                    self.write_line('elem_infos({0},3)={1}! loccal x-axis direction global x'.format(ele_num_adj,e_x[0]))     
+                    self.write_line('elem_infos({0},4)={1}! loccal x-axis direction global y'.format(ele_num_adj,e_x[1]))      
+                    self.write_line('elem_infos({0},5)={1}! loccal x-axis direction global z'.format(ele_num_adj,e_x[2]))    
+                    self.write_line('elem_infos({0},6)={1}! loccal y-axis direction global x'.format(ele_num_adj,e_y[0]))      
+                    self.write_line('elem_infos({0},7)={1}! loccal y-axis direction global y'.format(ele_num_adj,e_y[1])) 
+                    self.write_line('elem_infos({0},8)={1}! loccal y-axis direction global z'.format(ele_num_adj,e_y[2]))                              
+                
+                else:
+                    self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=0, mpc and other =1'.format(ele_num_adj,stype_number))   # Elementype     
+                    self.write_line('elem_infos({0},2)={1} ! Elementnumber'.format(ele_num_adj,ele_num_adj))   # Elementnumber 
+                    self.write_line('elem_infos({0},3)=0'.format(ele_num_adj))
+                    self.write_line('elem_infos({0},4)=0'.format(ele_num_adj))
+                    self.write_line('elem_infos({0},5)=0'.format(ele_num_adj)) 
+                    self.write_line('elem_infos({0},6)=0'.format(ele_num_adj)) 
+                    self.write_line('elem_infos({0},7)=0'.format(ele_num_adj)) 
+                    self.write_line('elem_infos({0},8)=0'.format(ele_num_adj))
+
+        cFile = open(os.path.join(path, filename), 'a')                                       
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,3), elem_infos(i,4), elem_infos(i,5), elem_infos(i,6), elem_infos(i,7), elem_infos(i,8)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close()
+        
+        # ------------------------------------------------------------------
+        # Schleife uber alle angegebenen lstep (e.g. 'step_3')
+        # ------------------------------------------------------------------
+        self.write_section('Start extracting selected results for each selected step')
+        
+        # Define times and steps
+        sbstep=sbstep # equal to increments        
+        step_list=structure.steps_order        
+
+        for single_lstep in lstep:            
             lstep_index=step_list.index(single_lstep)         
-            
-            
             self.write_line('set,{0},{1}'.format(lstep_index,sbstep))
             print('---------------------')
             
-            # Define steps for output
-            name = structure.name
-            path = structure.path
             step_name = structure.steps_order[lstep_index]
-            
 
-            # Loschen der Dateien in Output Pfad
-            out_path = os.path.join(path, name + '_output')
-            dir = out_path
-            if not os.path.exists(out_path):
-                os.makedirs(out_path)
-            else:
-                for f in os.listdir(dir):
-                    os.remove(os.path.join(dir, f))
-    
-
-            filename = name + '_extract.txt'
-            
-            # General element infos (Werden dann unten im entsprechenden benotigen speicherung der variabeln wiederverwendet)
             # ------------------------------------------------------------------
-                      
-            elements = self.structure.elements
-            num_elements = len(elements)
-            properties = self.structure.element_properties
-            sections = self.structure.sections
-            sets = self.structure.sets
-            
+            # WRITE DATA AT NODES
+            # ------------------------------------------------------------------
 
-            self.write_line('*DIM,elem_infos,ARRAY,{0},8'.format(num_elements))   
-            fname = str(step_name) + '_' + 'elem_infos'
-            name_ = 'elem_infos'
-            
-            # Bestimmung der elementspezifischen Werte
-            for key in sorted(properties):
-                property = properties[key]
-                section = sections[property.section]
-                stype = section.__name__
-                elset = property.elset
-                element_set = sets[property.elset]
-                selection = property.elements if property.elements else sets[elset].selection # Zum elemeset zugehorige Elementnummern
-                
-                if stype == 'ShellSection':
-                    stype_number=1 # Schalenelement
-
-                else:
-                    stype_number=0 # MPC or Other
-                    
-                for ele_num in sorted(selection):                    
-                    ele_num_adj=ele_num+1
-
-                    if stype_number == 1: # Schalenelement
-                        loc_coor_EV_XA= section.loc_coords_EV_XA
-                        loc_coor_EV_YA= section.loc_coords_EV_YA
-                        loc_coor_EV_ZA= section.loc_coords_EV_ZA
-                        
-                        
-                        if element_set.type != 'node':   
-                            e_x=loc_coor_EV_XA.get('EV_XA',None)
-                            e_y=loc_coor_EV_YA.get('EV_YA',None)
-                            e_z=loc_coor_EV_ZA.get('EV_ZA',None)
-                        
-                        self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=1, mpc and other =0'.format(ele_num_adj,stype_number))   # Elementype     
-                        self.write_line('elem_infos({0},2)={1} ! Elementnumber'.format(ele_num_adj,ele_num_adj))   # Elementnumber 
-                        self.write_line('elem_infos({0},3)={1}! loccal x-axis direction global x'.format(ele_num_adj,e_x[0]))     
-                        self.write_line('elem_infos({0},4)={1}! loccal x-axis direction global y'.format(ele_num_adj,e_x[1]))      
-                        self.write_line('elem_infos({0},5)={1}! loccal x-axis direction global z'.format(ele_num_adj,e_x[2]))    
-                        self.write_line('elem_infos({0},6)={1}! loccal y-axis direction global x'.format(ele_num_adj,e_y[0]))      
-                        self.write_line('elem_infos({0},7)={1}! loccal y-axis direction global y'.format(ele_num_adj,e_y[1])) 
-                        self.write_line('elem_infos({0},8)={1}! loccal y-axis direction global z'.format(ele_num_adj,e_y[2]))         
-                
-                    else:
-                        self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=0, mpc and other =1'.format(ele_num_adj,stype_number))   # Elementype     
-                        self.write_line('elem_infos({0},2)={1} ! Elementnumber'.format(ele_num_adj,ele_num_adj))   # Elementnumber 
-                        self.write_line('elem_infos({0},3)=0'.format(ele_num_adj))
-                        self.write_line('elem_infos({0},4)=0'.format(ele_num_adj))
-                        self.write_line('elem_infos({0},5)=0'.format(ele_num_adj)) 
-                        self.write_line('elem_infos({0},6)=0'.format(ele_num_adj)) 
-                        self.write_line('elem_infos({0},7)=0'.format(ele_num_adj)) 
-                        self.write_line('elem_infos({0},8)=0'.format(ele_num_adj))
-                                       
-
-            cFile = open(os.path.join(path, filename), 'a')
-            self.write_line('allsel')
-            self.write_line('*get, nelem, elem,, count ')
-            self.write_line('*cfopen,' + out_path + '/' + fname + ',txt ')                
-            self.write_line('*do,i,1,nelem ')            
-            self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,3), elem_infos(i,4), elem_infos(i,5), elem_infos(i,6), elem_infos(i,7), elem_infos(i,8)')
-            self.write_line('*Enddo ')
-            self.write_line('ESEL, ALL ')
-            self.write_line('ETABLE, ERAS ')
-            self.write_line('! ')
-            cFile.close()
-
-            # Write DISPLACEMENTS at nodes
+            # Write displacements at nodes
             # ------------------------------------------------------------------
             if 'u' in fields or 'all' in fields:
                 fname = str(step_name) + '_' + 'displacements'
@@ -177,7 +182,11 @@ class Results(object):
                 self.write_line('!')
                 cFile.close()
 
-            # Write SHELL FORCES AND MOMENTS (only for Shell elements)
+            # ------------------------------------------------------------------
+            # WRITE DATA AT SHELL MIDPOINT
+            # ------------------------------------------------------------------                
+
+            # Write shell forces and montents at shell mitdpoint (only for Shell elements)
             # ------------------------------------------------------------------
             if 'sf' in fields or 'all' in fields:
 
@@ -223,7 +232,6 @@ class Results(object):
                 self.write_line('*endif')    
                 self.write_line('*Enddo ')
 
-
                 fname = str(step_name) + '_' + 'shell_forces_moments'
                 self.write_line('*cfopen,' + out_path + '/' + fname + ',txt ')
                 #self.write_line('*CFWRITE, stresses, E number, Sm11, Sm22, Sm12, Sb11 \n')
@@ -235,12 +243,17 @@ class Results(object):
                 self.write_line('ETABLE, ERAS ')
                 self.write_line('! ')
                 cFile.close()
+
+
+            # ------------------------------------------------------------------
+            # WRITE DATA AT GP
+            # ------------------------------------------------------------------    
         
-            # Write STRESSES at top and bottom Elementlayer from usermat results
+            # Write Stresses at top and bottom Elementlayer at every GP 
             # ------------------------------------------------------------------               
             if 's' in fields or 'all' in fields:
 
-                # Benotigte Element infos abspeichern fur stresses
+                # Benotigte Element infos abspeichern fur stresses (MAYBE TO REMOVE)
                 # --------------------------------------------
                 fname = str(step_name) + '_' + 'stresses_elem_infos'
                 name_ = 'e_info_GP'
@@ -251,7 +264,6 @@ class Results(object):
                 name_loc_y_glob_y ='loc_y_glob_y'
                 name_loc_y_glob_z ='loc_y_glob_z'
                 name_elem_typ ='elem_typ'
-
 
                 cFile = open(os.path.join(path, filename), 'a')
                 self.blank_line()
@@ -363,8 +375,7 @@ class Results(object):
                 self.write_line('*dim,' + name_ + ', ,4*NrE')
                 self.write_line('*DIM,coor_intp_layer_x,ARRAY,4*NrE,1')
                 self.write_line('*DIM,coor_intp_layer_y,ARRAY,4*NrE,1')
-                self.write_line('*DIM,coor_intp_layer_z,ARRAY,4*NrE,1')
-                self.write_line('*DIM,testing,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_z,ARRAY,4*NrE,1')               
   
                 
                 # Extract Principal stresses from usermat
@@ -452,10 +463,9 @@ class Results(object):
                 self.write_line('*DEL,N_E,,NOPR')
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
-
                 self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
                 self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_x + '(1) , \',\' ,' + name_sig_y + '(1) , \',\' ,'+ name_tau_xy + '(1) , \',\' ,' + name_fcc_eff + '(1) , \',\' ,'+ name_coor_intp_layer_x + '(1) , \',\' ,'  + name_coor_intp_layer_y + '(1) , \',\' ,' + name_coor_intp_layer_z + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')
 
                 self.write_line('!')
@@ -597,7 +607,7 @@ class Results(object):
             else:
                 pass 
 
-            # Write STRAINS at top and bottom Elementlayer from usermat results
+            # Write strains at top and bottom Elementlayer at every GP
             # ------------------------------------------------------------------               
             if 'eps' in fields or 'all' in fields:
 
@@ -770,7 +780,7 @@ class Results(object):
             else:
                 pass 
 
-            # Write STEEL STRESSES at reinforcement Layer 1-4 from usermat results
+            # Write steel stresses at reinforcement Layer 1-4 at every GP
             # ------------------------------------------------------------------               
             if 'sig_sr' in fields or 'all' in fields:
 
@@ -782,14 +792,11 @@ class Results(object):
                 fname_4L = str(step_name) + '_' + 'sig_sr_4L'
                 name_ = 'sig_sr_GP'
                 name_elem_nr = 'elem_nr'
-                name_sig_sr_1L_x = 'sig_sr_1L_x'
-                name_sig_sr_2L_x = 'sig_sr_2L_x'
-                name_sig_sr_3L_x = 'sig_sr_3L_x'
-                name_sig_sr_4L_x = 'sig_sr_4L_x'
-                name_sig_sr_1L_y = 'sig_sr_1L_y'
-                name_sig_sr_2L_y = 'sig_sr_2L_y'
-                name_sig_sr_3L_y = 'sig_sr_3L_y'
-                name_sig_sr_4L_y = 'sig_sr_4L_y'
+                name_sig_sr_1L = 'sig_sr_1L'                 
+                name_sig_sr_2L = 'sig_sr_2L'                 
+                name_sig_sr_3L = 'sig_sr_3L'                 
+                name_sig_sr_4L = 'sig_sr_4L'                 
+                
                 name_coor_x_sig_sr_1L ='coor_x_sig_sr_1L'
                 name_coor_y_sig_sr_1L ='coor_y_sig_sr_1L'
                 name_coor_z_sig_sr_1L ='coor_z_sig_sr_1L'
@@ -817,14 +824,10 @@ class Results(object):
                 self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
 
                 # Aufbau der Arrays
-                self.write_line('*DIM,sig_sr_1L_x,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_2L_x,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_3L_x,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_4L_x,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_1L_y,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_2L_y,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_3L_y,ARRAY,4*NrE,1')
-                self.write_line('*DIM,sig_sr_4L_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_1L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_2L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_3L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,sig_sr_4L,ARRAY,4*NrE,1')
     
                 self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
                 self.write_line('*dim,' + name_ + ', ,4*NrE')
@@ -870,12 +873,13 @@ class Results(object):
                 self.write_line('*GET,sig_sr_1L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
                 self.write_line('*GET,sig_sr_1L_DruckZug_x,NODE,N_N(kk),SVAR,34')
                 self.write_line('*GET,sig_sr_1L_Zug_x,NODE,N_N(kk),SVAR,40')
-                self.write_line('sig_sr_1L_x(aux,1)=sig_sr_1L_Druck_x+sig_sr_1L_Druckfeld_x+sig_sr_1L_DruckZug_x+sig_sr_1L_Zug_x')
+                self.write_line('sig_sr_1L_x=sig_sr_1L_Druck_x+sig_sr_1L_Druckfeld_x+sig_sr_1L_DruckZug_x+sig_sr_1L_Zug_x')
                 self.write_line('*GET,sig_sr_1L_Druck_y,NODE,N_N(kk),SVAR,14')
                 self.write_line('*GET,sig_sr_1L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
                 self.write_line('*GET,sig_sr_1L_DruckZug_y,NODE,N_N(kk),SVAR,35')
                 self.write_line('*GET,sig_sr_1L_Zug_y,NODE,N_N(kk),SVAR,41')
-                self.write_line('sig_sr_1L_y(aux,1)=sig_sr_1L_Druck_y+sig_sr_1L_Druckfeld_y+sig_sr_1L_DruckZug_y+sig_sr_1L_Zug_y')
+                self.write_line('sig_sr_1L_y=sig_sr_1L_Druck_y+sig_sr_1L_Druckfeld_y+sig_sr_1L_DruckZug_y+sig_sr_1L_Zug_y')
+                self.write_line('sig_sr_1L(aux,1)=sig_sr_1L_x+sig_sr_1L_y') # fiktive x und y Richtung zusammenzahlen
                 self.write_line('*GET,coor_x_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,64')
                 self.write_line('*GET,coor_z_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,65')                  
@@ -886,12 +890,13 @@ class Results(object):
                 self.write_line('*GET,sig_sr_2L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
                 self.write_line('*GET,sig_sr_2L_DruckZug_x,NODE,N_N(kk),SVAR,34')
                 self.write_line('*GET,sig_sr_2L_Zug_x,NODE,N_N(kk),SVAR,40')
-                self.write_line('sig_sr_2L_x(aux,1)=sig_sr_2L_Druck_x+sig_sr_2L_Druckfeld_x+sig_sr_2L_DruckZug_x+sig_sr_2L_Zug_x')
+                self.write_line('sig_sr_2L_x=sig_sr_2L_Druck_x+sig_sr_2L_Druckfeld_x+sig_sr_2L_DruckZug_x+sig_sr_2L_Zug_x')
                 self.write_line('*GET,sig_sr_2L_Druck_y,NODE,N_N(kk),SVAR,14')
                 self.write_line('*GET,sig_sr_2L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
                 self.write_line('*GET,sig_sr_2L_DruckZug_y,NODE,N_N(kk),SVAR,35')
                 self.write_line('*GET,sig_sr_2L_Zug_y,NODE,N_N(kk),SVAR,41')
-                self.write_line('sig_sr_2L_y(aux,1)=sig_sr_2L_Druck_y+sig_sr_2L_Druckfeld_y+sig_sr_2L_DruckZug_y+sig_sr_2L_Zug_y')
+                self.write_line('sig_sr_2L_y=sig_sr_2L_Druck_y+sig_sr_2L_Druckfeld_y+sig_sr_2L_DruckZug_y+sig_sr_2L_Zug_y')
+                self.write_line('sig_sr_2L(aux,1)=sig_sr_2L_x+sig_sr_2L_y') # fiktive x und y Richtung zusammenzahlen
                 self.write_line('*GET,coor_x_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,64')
                 self.write_line('*GET,coor_z_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,65')     
@@ -902,12 +907,13 @@ class Results(object):
                 self.write_line('*GET,sig_sr_3L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
                 self.write_line('*GET,sig_sr_3L_DruckZug_x,NODE,N_N(kk),SVAR,34')
                 self.write_line('*GET,sig_sr_3L_Zug_x,NODE,N_N(kk),SVAR,40')
-                self.write_line('sig_sr_3L_x(aux,1)=sig_sr_3L_Druck_x+sig_sr_3L_Druckfeld_x+sig_sr_3L_DruckZug_x+sig_sr_3L_Zug_x')
+                self.write_line('sig_sr_3L_x=sig_sr_3L_Druck_x+sig_sr_3L_Druckfeld_x+sig_sr_3L_DruckZug_x+sig_sr_3L_Zug_x')
                 self.write_line('*GET,sig_sr_3L_Druck_y,NODE,N_N(kk),SVAR,14')
                 self.write_line('*GET,sig_sr_3L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
                 self.write_line('*GET,sig_sr_3L_DruckZug_y,NODE,N_N(kk),SVAR,35')
                 self.write_line('*GET,sig_sr_3L_Zug_y,NODE,N_N(kk),SVAR,41')
-                self.write_line('sig_sr_3L_y(aux,1)=sig_sr_3L_Druck_y+sig_sr_3L_Druckfeld_y+sig_sr_3L_DruckZug_y+sig_sr_3L_Zug_y')
+                self.write_line('sig_sr_3L_y=sig_sr_3L_Druck_y+sig_sr_3L_Druckfeld_y+sig_sr_3L_DruckZug_y+sig_sr_3L_Zug_y')
+                self.write_line('sig_sr_3L(aux,1)=sig_sr_3L_x+sig_sr_3L_y') # fiktive x und y Richtung zusammenzahlen
                 self.write_line('*GET,coor_x_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,64')
                 self.write_line('*GET,coor_z_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,65')     
@@ -918,12 +924,13 @@ class Results(object):
                 self.write_line('*GET,sig_sr_4L_Druckfeld_x,NODE,N_N(kk),SVAR,20')
                 self.write_line('*GET,sig_sr_4L_DruckZug_x,NODE,N_N(kk),SVAR,34')
                 self.write_line('*GET,sig_sr_4L_Zug_x,NODE,N_N(kk),SVAR,40')
-                self.write_line('sig_sr_4L_x(aux,1)=sig_sr_4L_Druck_x+sig_sr_4L_Druckfeld_x+sig_sr_4L_DruckZug_x+sig_sr_4L_Zug_x')
+                self.write_line('sig_sr_4L_x=sig_sr_4L_Druck_x+sig_sr_4L_Druckfeld_x+sig_sr_4L_DruckZug_x+sig_sr_4L_Zug_x')
                 self.write_line('*GET,sig_sr_4L_Druck_y,NODE,N_N(kk),SVAR,14')
                 self.write_line('*GET,sig_sr_4L_Druckfeld_y,NODE,N_N(kk),SVAR,21')
                 self.write_line('*GET,sig_sr_4L_DruckZug_y,NODE,N_N(kk),SVAR,35')
                 self.write_line('*GET,sig_sr_4L_Zug_y,NODE,N_N(kk),SVAR,41')
-                self.write_line('sig_sr_4L_y(aux,1)=sig_sr_4L_Druck_y+sig_sr_4L_Druckfeld_y+sig_sr_4L_DruckZug_y+sig_sr_4L_Zug_y')
+                self.write_line('sig_sr_4L_y=sig_sr_4L_Druck_y+sig_sr_4L_Druckfeld_y+sig_sr_4L_DruckZug_y+sig_sr_4L_Zug_y')
+                self.write_line('sig_sr_4L(aux,1)=sig_sr_4L_x+sig_sr_4L_y') # fiktive x und y Richtung zusammenzahlen
                 self.write_line('*GET,coor_x_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,64')
                 self.write_line('*GET,coor_z_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,65')          
@@ -939,26 +946,26 @@ class Results(object):
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_1L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_1L_x + '(1) , \',\' , ' + name_sig_sr_1L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_1L + '(1) , \',\' ,'+ name_coor_y_sig_sr_1L + '(1) , \',\' ,'  + name_coor_z_sig_sr_1L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_1L + '(1) , \',\' , ' + name_coor_x_sig_sr_1L + '(1) , \',\' ,'+ name_coor_y_sig_sr_1L + '(1) , \',\' ,'  + name_coor_z_sig_sr_1L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_2L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_2L_x + '(1) , \',\' , ' + name_sig_sr_2L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_2L + '(1) , \',\' ,'+ name_coor_y_sig_sr_2L + '(1) , \',\' ,'  + name_coor_z_sig_sr_2L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_2L + '(1) , \',\' ,' + name_coor_x_sig_sr_2L + '(1) , \',\' ,'+ name_coor_y_sig_sr_2L + '(1) , \',\' ,'  + name_coor_z_sig_sr_2L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')                
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_3L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_3L_x + '(1) , \',\' , ' + name_sig_sr_3L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_3L + '(1) , \',\' ,'+ name_coor_y_sig_sr_3L + '(1) , \',\' ,'  + name_coor_z_sig_sr_3L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_3L + '(1) , \',\' , ' + name_coor_x_sig_sr_3L + '(1) , \',\' ,'+ name_coor_y_sig_sr_3L + '(1) , \',\' ,'  + name_coor_z_sig_sr_3L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')   
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_4L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_4L_x + '(1) , \',\' , ' + name_sig_sr_4L_y + '(1) , \',\' ,' + name_coor_x_sig_sr_4L + '(1) , \',\' ,'+ name_coor_y_sig_sr_4L + '(1) , \',\' ,'  + name_coor_z_sig_sr_4L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_4L + '(1) , \',\' , '  + name_coor_x_sig_sr_4L + '(1) , \',\' ,'+ name_coor_y_sig_sr_4L + '(1) , \',\' ,'  + name_coor_z_sig_sr_4L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')   
 
 
