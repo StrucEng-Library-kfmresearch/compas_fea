@@ -34,7 +34,8 @@ Rhino
     plot_volmesh
     plot_axes
     plot_data
-    plot_principal
+    plot_principal_stresses
+    plot_principal_strains
     plot_voxels
     weld_meshes_from_layer
 
@@ -63,7 +64,8 @@ if compas.RHINO:
         plot_volmesh,
         plot_axes,
         plot_data,
-        plot_principal,
+        plot_principal_stresses,
+        plot_principal_strains,
         plot_voxels,
         weld_meshes_from_layer,
     )
@@ -83,7 +85,8 @@ if compas.RHINO:
         'plot_volmesh',
         'plot_axes',
         'plot_data',
-        'plot_principal',
+        'plot_principal_stresses',
+        'plot_principal_strains',
         'plot_voxels',
         'weld_meshes_from_layer',
     ]

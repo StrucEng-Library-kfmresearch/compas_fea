@@ -57,7 +57,8 @@ __all__ = [
     'plot_volmesh',
     'plot_axes',
     'plot_data',
-    'plot_principal',
+    'plot_principal_stresses',
+    'plot_principal_strains',
     'plot_voxels',
     'weld_meshes_from_layer',
 ]
@@ -1148,7 +1149,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     toc2 = time() - tic
     print('Plot {1} results in Rhino successful in {0:.3f} s'.format(toc2,field))
 
-def plot_principal(structure, step, shell_layer, scale, layer=None):
+def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     """
     Plots the principal stresses of the elements.
 
@@ -1178,7 +1179,7 @@ def plot_principal(structure, step, shell_layer, scale, layer=None):
     """
     # Einlesen der Daten
     data = structure.results[step]['GP'] 
-    
+
     # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
     
     if shell_layer == 'top':
@@ -1222,7 +1223,8 @@ def plot_principal(structure, step, shell_layer, scale, layer=None):
 
     # Berechnung der sHauptspannungen und dessen Richtungen (in lokalen Koordinaten)
     # --------------------------------------------------------------------------
-    ew_top, ev_top, ew_bot, ev_bot, length_stress=functions.principal_stresses(data)  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+
+    ew_top, ev_top, ew_bot, ev_bot, length_stress=functions.principal_stresses(data,kind='sigma')   # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
   
     if shell_layer == 'top':
         ew=ew_top
@@ -1357,7 +1359,208 @@ def plot_principal(structure, step, shell_layer, scale, layer=None):
             pass
    
 
+# --------------------------------------------------------------------------------------
+def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
+    """
+    Plots the principal strains of the elements.
+
+    Parameters
+    ----------
+    structure : obj
+        Structure object.
+    step : str
+        Name of the Step.
+    sp : str
+        'sp1' or 'sp5' for stection point 1 or 5.
+    stype : str
+        'max' or 'min' for maximum or minimum principal stresses.
+    scale : float
+        Scale on the length of the line markers (usually 10^6).
+    layer : str
+        Layer name for plotting.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - Centroids are taken on the undeformed geometry.
+
+    """
+    # Einlesen der Daten
+    data = structure.results[step]['GP'] 
     
+    # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
+    
+    if shell_layer == 'top':
+        eps_bruch=data['eps_bruch']     
+        coor_intp_layer_x=data['coor_intp_layer_x_top']     
+        coor_intp_layer_y=data['coor_intp_layer_y_top']     
+        coor_intp_layer_z=data['coor_intp_layer_z_top']
+        
+        
+    elif shell_layer == 'bot':  
+        eps_bruch=data['eps_bruch']     
+        coor_intp_layer_x=data['coor_intp_layer_x_bot']     
+        coor_intp_layer_y=data['coor_intp_layer_y_bot']     
+        coor_intp_layer_z=data['coor_intp_layer_z_bot']               
+        
+    elem_nr=data['elem_nr_bot']
+    loc_x_glob_x=data['loc_x_glob_x']        
+    loc_x_glob_y=data['loc_x_glob_y'] 
+    loc_x_glob_z=data['loc_x_glob_z'] 
+    loc_y_glob_x=data['loc_y_glob_x']        
+    loc_y_glob_y=data['loc_y_glob_y'] 
+    loc_y_glob_z=data['loc_y_glob_z']  
+    elem_typ=data['elem_typ']   
+
+
+
+
+    # Aufbau Layer
+    # --------------------------------------------------------------------------
+    x_3_loc=[]
+    y_3_loc=[]
+    x_1_loc=[]
+    y_1_loc=[]
+
+    # Layer in Rhino erzeugen
+    if not layer:
+            layer = '{0}_principal_strains_{1}_layer'.format(step, shell_layer)
+    rs.CurrentLayer(rs.AddLayer(layer))
+    rs.DeleteObjects(rs.ObjectsByLayer(layer))
+    rs.EnableRedraw(False)
+
+    # Berechnung der Hauptverzerrungen und dessen Richtungen (in lokalen Koordinaten)
+    # --------------------------------------------------------------------------
+    
+    ew_top, ev_top, ew_bot, ev_bot, length_=functions.principal_stresses(data,kind='eps')  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+
+    if shell_layer == 'top':
+        ew=ew_top
+        ev=ev_top
+    elif shell_layer == 'bot':  
+        ew=ew_bot
+        ev=ev_bot 
+
+    min_strains=min(min(ew))
+    max_strains=max(max(ew))
+
+        
+    # Ploten der Hauptverzerrung 3
+    # --------------------------------------------------------------------------
+    for b in range(length_): 
+        
+        
+              
+        elem_typ_GP=elem_typ[b]
+        
+
+        if elem_typ_GP == 1: # 1=shell 0=MPR or others
+            coor_intp_layer_x_GP=coor_intp_layer_x[b]
+            coor_intp_layer_y_GP=coor_intp_layer_y[b]
+            coor_intp_layer_z_GP=coor_intp_layer_z[b]
+            loc_x_glob_x_GP=loc_x_glob_x[b]
+            loc_x_glob_y_GP=loc_x_glob_y[b]
+            loc_x_glob_z_GP=loc_x_glob_z[b]
+            loc_y_glob_x_GP=loc_y_glob_x[b]      
+            loc_y_glob_y_GP=loc_y_glob_y[b] 
+            loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+            eps_bruch_GP=eps_bruch[b]           
+
+            # Bestimmung aktuellen Hauptverzerrung 3
+
+            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+            T = Transformation.from_frame(f2)  
+            ev_GP=ev[b]
+            ew_GP=ew[b]       
+            
+            eps_3_GP=min(ew_GP)
+            index_3_GP=ew_GP.index(eps_3_GP)     
+            
+            # Vectors local coor
+            x_3_loc=ev_GP[0][index_3_GP]*eps_3_GP*scale
+            y_3_loc=ev_GP[1][index_3_GP]*eps_3_GP*scale
+            v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
+            v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
+            
+            
+            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
+            
+            if eps_3_GP >= 0:
+               id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+               col3=[255,0,0]
+               rs.ObjectColor(id3, col3)
+               
+            elif eps_3_GP < 0:
+                if eps_bruch_GP < 1: # kein Bruch
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[0,0,255]
+                    rs.ObjectColor(id3, col3)
+                elif eps_bruch_GP >= 1: # Bruch          
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[0,0,0]
+                    rs.ObjectColor(id3, col3)
+        else:
+            pass
+    
+    
+    # Ploten der Hauptverzerrung 1
+    # --------------------------------------------------------------------------
+    for b in range(length_): 
+        
+        elem_typ_GP=elem_typ[b]
+
+        if elem_typ_GP == 1: # 1=shell 0=MPR or others
+            coor_intp_layer_x_GP=coor_intp_layer_x[b]
+            coor_intp_layer_y_GP=coor_intp_layer_y[b]
+            coor_intp_layer_z_GP=coor_intp_layer_z[b]
+            loc_x_glob_x_GP=loc_x_glob_x[b]
+            loc_x_glob_y_GP=loc_x_glob_y[b]
+            loc_x_glob_z_GP=loc_x_glob_z[b]
+            loc_y_glob_x_GP=loc_y_glob_x[b]      
+            loc_y_glob_y_GP=loc_y_glob_y[b] 
+            loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+            eps_bruch_GP=eps_bruch[b]             
+
+            # Bestimmung aktuellen Hauptverzerrung 1
+
+            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+            T = Transformation.from_frame(f2)  
+            ev_GP=ev[b]
+            ew_GP=ew[b]       
+
+            eps_1_GP=max(ew_GP)
+            index_1_GP=ew_GP.index(eps_1_GP)     
+            
+            # Vectors local coor
+            x_1_loc=ev_GP[0][index_1_GP]*eps_1_GP*scale
+            y_1_loc=ev_GP[1][index_1_GP]*eps_1_GP*scale
+            v_plus = Vector(x_1_loc*0.5, y_1_loc*0.5,0.).transformed(T)
+            v_minus = Vector(-x_1_loc*0.5, -y_1_loc*0.5,0.).transformed(T)
+            
+            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]              
+            
+            if eps_1_GP >= 0:
+                id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                col1=[255,0,0]
+                rs.ObjectColor(id1, col1)
+
+            elif eps_1_GP < 0:
+                if eps_bruch_GP < 1: # kein Bruch
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[0,0,255]
+                    rs.ObjectColor(id1, col1)
+                elif eps_bruch_GP >= 1: # Bruch          
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[0,0,0]
+                    rs.ObjectColor(id1, col1)
+        else:
+            pass
+   # -----------    -----------------------------------------------------------------------------
 
 def plot_voxels(structure, step, field='smises', cbar=[None, None], iptype='mean', nodal='mean', vdx=None, mode=''):
     """

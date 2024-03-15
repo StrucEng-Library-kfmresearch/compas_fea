@@ -547,7 +547,7 @@ def postprocess(nodes, elements, ux, uy, uz, data, dtype, scale, cbar, ctype, ip
 #     return Am
 
 
-def principal_stresses(data):
+def principal_stresses(data, kind='sigma'):
     """ Performs principal stress calculations solving the eigenvalues problem.
     Parameters
     ----------
@@ -571,7 +571,11 @@ def principal_stresses(data):
     """
     # Top Spannungen
     # -----------------------------------------------------------------------------------
-    components = ['sig_x_top', 'sig_y_top', 'tau_xy_top']
+    if kind=='sigma':
+        components = ['sig_x_top', 'sig_y_top', 'tau_xy_top']
+    elif kind=='eps':
+        components = ['eps_x_top', 'eps_y_top', 'eps_xy_top']
+    
 
     stress_results = list(zip(*[data[stress_name].values() for stress_name in components]))
     length_stress=len(stress_results)
@@ -590,7 +594,10 @@ def principal_stresses(data):
 
     # Bot Spannungen
     # -----------------------------------------------------------------------------------
-    components = ['sig_x_bot', 'sig_y_bot', 'tau_xy_bot']
+    if kind=='sigma':
+        components = ['sig_x_bot', 'sig_y_bot', 'tau_xy_bot']
+    elif kind=='eps':
+        components = ['eps_x_bot', 'eps_y_bot', 'eps_xy_bot']
 
     stress_results = list(zip(*[data[stress_name].values() for stress_name in components]))
     length_stress=len(stress_results)
@@ -610,3 +617,5 @@ def principal_stresses(data):
    
     
     return ew_top, ev_top, ew_bot, ev_bot, length_stress
+
+

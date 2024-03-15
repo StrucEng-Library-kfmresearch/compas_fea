@@ -458,7 +458,97 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 stress_dict['coor_intp_layer_z_bot'][key] = float(stress[8])                                                                      
                             
                             gplist.append(stress_dict)
+  
+
+                    # eps_x, eps_x and eps_xy at each GP
+                    # -------------------------------------------------------
+                    if 'eps' in fields or 'all' in fields:
                         
+                        # Add strains eps_x, eps_y, eps_xy elment infos to the structure
+                        filename = step + '_strains_elem_infos.txt'
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            strain_x_y_xy_dict = {'nr': {},'loc_x_glob_x': {}, 'loc_x_glob_y': {}, 'loc_x_glob_z': {}, 'loc_y_glob_x': {} , 'loc_y_glob_y': {} , 'loc_y_glob_z': {} , 'elem_typ': {} } 
+                            for i in range(len(ps)):
+                                esp_x_y_y_string = ps[i].split(',')
+                                strain_x_y_xy = map(float, esp_x_y_y_string)
+                                key = int(strain_x_y_xy[0]) - 1                            
+                                strain_x_y_xy_dict['nr'][key] = float(strain_x_y_xy[0])
+                                strain_x_y_xy_dict['loc_x_glob_x'][key] = float(strain_x_y_xy[1])
+                                strain_x_y_xy_dict['loc_x_glob_y'][key] = float(strain_x_y_xy[2])
+                                strain_x_y_xy_dict['loc_x_glob_z'][key] = float(strain_x_y_xy[3])                            
+                                strain_x_y_xy_dict['loc_y_glob_x'][key] = float(strain_x_y_xy[4])                                                        
+                                strain_x_y_xy_dict['loc_y_glob_y'][key] = float(strain_x_y_xy[5])
+                                strain_x_y_xy_dict['loc_y_glob_z'][key] = float(strain_x_y_xy[6])
+                                strain_x_y_xy_dict['elem_typ'][key] = float(strain_x_y_xy[7])
+                            
+                            gplist.append(strain_x_y_xy_dict)  
+                        
+
+
+                        # Add strains TOP to the structure
+                        filename = step + '_eps_x_y_xy_top.txt'
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            strain_x_y_xy_dict = {'GP_name_top': {},'elem_nr_top': {}, 'eps_x_top': {}, 'eps_y_top': {}, 'eps_xy_top': {}, 'eps_bruch': {} , 'coor_intp_layer_x_top': {} , 'coor_intp_layer_y_top': {}, 'coor_intp_layer_z_top': {}} 
+                            for i in range(len(ps)):
+                                esp_x_y_y_string = ps[i].split(',')
+                                strain_x_y_xy = map(float, esp_x_y_y_string)
+                                key = int(strain_x_y_xy[0]) - 1                            
+                                strain_x_y_xy_dict['GP_name_top'][key] = float(strain_x_y_xy[0])
+                                strain_x_y_xy_dict['elem_nr_top'][key] = float(strain_x_y_xy[1])
+                                strain_x_y_xy_dict['eps_x_top'][key] = float(strain_x_y_xy[2])
+                                strain_x_y_xy_dict['eps_y_top'][key] = float(strain_x_y_xy[3])                            
+                                strain_x_y_xy_dict['eps_xy_top'][key] = float(strain_x_y_xy[4])                                                        
+                                strain_x_y_xy_dict['eps_bruch'][key] = float(strain_x_y_xy[5])   
+                                strain_x_y_xy_dict['coor_intp_layer_x_top'][key] = float(strain_x_y_xy[6])
+                                strain_x_y_xy_dict['coor_intp_layer_y_top'][key] = float(strain_x_y_xy[7])
+                                strain_x_y_xy_dict['coor_intp_layer_z_top'][key] = float(strain_x_y_xy[8])
+                            
+                            gplist.append(strain_x_y_xy_dict)  
+
+                        
+                        # Add strains BOT to the structure      
+                        filename = step + '_eps_x_y_xy_bot.txt'
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            strain_x_y_xy_dict = {'GP_name_bot': {},'elem_nr_bot': {}, 'eps_x_bot': {}, 'eps_y_bot': {}, 'eps_xy_bot': {}, 'eps_bruch': {}, 'coor_intp_layer_x_bot': {} , 'coor_intp_layer_y_bot': {}, 'coor_intp_layer_z_bot': {}} 
+                            for i in range(len(ps)):
+                                esp_x_y_y_string = ps[i].split(',')
+                                strain_x_y_xy = map(float, esp_x_y_y_string)
+                                key = int(strain_x_y_xy[0]) - 1
+                                strain_x_y_xy_dict['GP_name_bot'][key] = float(strain_x_y_xy[0])
+                                strain_x_y_xy_dict['elem_nr_bot'][key] = float(strain_x_y_xy[1])
+                                strain_x_y_xy_dict['eps_x_bot'][key] = float(strain_x_y_xy[2])
+                                strain_x_y_xy_dict['eps_y_bot'][key] = float(strain_x_y_xy[3])                            
+                                strain_x_y_xy_dict['eps_xy_bot'][key] = float(strain_x_y_xy[4])                                                                                        
+                                strain_x_y_xy_dict['eps_bruch'][key] = float(strain_x_y_xy[5])  
+                                strain_x_y_xy_dict['coor_intp_layer_x_bot'][key] = float(strain_x_y_xy[6])
+                                strain_x_y_xy_dict['coor_intp_layer_y_bot'][key] = float(strain_x_y_xy[7])
+                                strain_x_y_xy_dict['coor_intp_layer_z_bot'][key] = float(strain_x_y_xy[8])                                                                      
+                            
+                            gplist.append(strain_x_y_xy_dict)
 
                     
                     # Principal Strains at each GP
@@ -538,18 +628,17 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_1 = sig_sr_1_file.readlines()
                                         
                             
-                            sig_sr_1_dict = {'GP_name_1L': {},'elem_nr_1L': {}, 'sig_sr_1L_x': {}, 'sig_sr_1L_y': {}, 'coor_x_sig_sr_1L': {} , 'coor_y_sig_sr_1L': {}, 'coor_z_sig_sr_1L': {}} 
+                            sig_sr_1_dict = {'GP_name_1L': {},'elem_nr_1L': {}, 'sig_sr_1L': {}, 'coor_x_sig_sr_1L': {} , 'coor_y_sig_sr_1L': {}, 'coor_z_sig_sr_1L': {}} 
                             for i in range(len(sig_sr_1)):
                                 sig_sr_1_string = sig_sr_1[i].split(',')
                                 sig_sr_1_stress = map(float, sig_sr_1_string)
                                 key = int(sig_sr_1_stress[0]) - 1                            
                                 sig_sr_1_dict['GP_name_1L'][key] = float(sig_sr_1_stress[0])
                                 sig_sr_1_dict['elem_nr_1L'][key] = float(sig_sr_1_stress[1])
-                                sig_sr_1_dict['sig_sr_1L_x'][key] = float(sig_sr_1_stress[2])
-                                sig_sr_1_dict['sig_sr_1L_y'][key] = float(sig_sr_1_stress[3])                            
-                                sig_sr_1_dict['coor_x_sig_sr_1L'][key] = float(sig_sr_1_stress[4])
-                                sig_sr_1_dict['coor_y_sig_sr_1L'][key] = float(sig_sr_1_stress[5])
-                                sig_sr_1_dict['coor_z_sig_sr_1L'][key] = float(sig_sr_1_stress[6])
+                                sig_sr_1_dict['sig_sr_1L'][key] = float(sig_sr_1_stress[2])                                
+                                sig_sr_1_dict['coor_x_sig_sr_1L'][key] = float(sig_sr_1_stress[3])
+                                sig_sr_1_dict['coor_y_sig_sr_1L'][key] = float(sig_sr_1_stress[4])
+                                sig_sr_1_dict['coor_z_sig_sr_1L'][key] = float(sig_sr_1_stress[5])
                             
                             gplist.append(sig_sr_1_dict)  
                         
@@ -564,18 +653,17 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_2 = sig_sr_2_file.readlines()
                                         
                             
-                            sig_sr_2_dict = {'GP_name_2L': {},'elem_nr_2L': {}, 'sig_sr_2L_x': {}, 'sig_sr_2L_y': {}, 'coor_x_sig_sr_2L': {} , 'coor_y_sig_sr_2L': {}, 'coor_z_sig_sr_2L': {}} 
+                            sig_sr_2_dict = {'GP_name_2L': {},'elem_nr_2L': {}, 'sig_sr_2L': {}, 'coor_x_sig_sr_2L': {} , 'coor_y_sig_sr_2L': {}, 'coor_z_sig_sr_2L': {}} 
                             for i in range(len(sig_sr_2)):
                                 sig_sr_2_string = sig_sr_2[i].split(',')
                                 sig_sr_2_stress = map(float, sig_sr_2_string)
                                 key = int(sig_sr_2_stress[0]) - 1                            
                                 sig_sr_2_dict['GP_name_2L'][key] = float(sig_sr_2_stress[0])
                                 sig_sr_2_dict['elem_nr_2L'][key] = float(sig_sr_2_stress[1])
-                                sig_sr_2_dict['sig_sr_2L_x'][key] = float(sig_sr_2_stress[2])
-                                sig_sr_2_dict['sig_sr_2L_y'][key] = float(sig_sr_2_stress[3])                            
-                                sig_sr_2_dict['coor_x_sig_sr_2L'][key] = float(sig_sr_2_stress[4])
-                                sig_sr_2_dict['coor_y_sig_sr_2L'][key] = float(sig_sr_2_stress[5])
-                                sig_sr_2_dict['coor_z_sig_sr_2L'][key] = float(sig_sr_2_stress[6])
+                                sig_sr_2_dict['sig_sr_2L'][key] = float(sig_sr_2_stress[2])                                                     
+                                sig_sr_2_dict['coor_x_sig_sr_2L'][key] = float(sig_sr_2_stress[3])
+                                sig_sr_2_dict['coor_y_sig_sr_2L'][key] = float(sig_sr_2_stress[4])
+                                sig_sr_2_dict['coor_z_sig_sr_2L'][key] = float(sig_sr_2_stress[5])
                             
                             gplist.append(sig_sr_2_dict)  
                         
@@ -590,18 +678,17 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_3 = sig_sr_3_file.readlines()
                                         
                             
-                            sig_sr_3_dict = {'GP_name_3L': {},'elem_nr_3L': {}, 'sig_sr_3L_x': {}, 'sig_sr_3L_y': {}, 'coor_x_sig_sr_3L': {} , 'coor_y_sig_sr_3L': {}, 'coor_z_sig_sr_3L': {}} 
+                            sig_sr_3_dict = {'GP_name_3L': {},'elem_nr_3L': {}, 'sig_sr_3L': {}, 'coor_x_sig_sr_3L': {} , 'coor_y_sig_sr_3L': {}, 'coor_z_sig_sr_3L': {}} 
                             for i in range(len(sig_sr_3)):
                                 sig_sr_3_string = sig_sr_3[i].split(',')
                                 sig_sr_3_stress = map(float, sig_sr_3_string)
                                 key = int(sig_sr_3_stress[0]) - 1                            
                                 sig_sr_3_dict['GP_name_3L'][key] = float(sig_sr_3_stress[0])
                                 sig_sr_3_dict['elem_nr_3L'][key] = float(sig_sr_3_stress[1])
-                                sig_sr_3_dict['sig_sr_3L_x'][key] = float(sig_sr_3_stress[2])
-                                sig_sr_3_dict['sig_sr_3L_y'][key] = float(sig_sr_3_stress[3])                            
-                                sig_sr_3_dict['coor_x_sig_sr_3L'][key] = float(sig_sr_3_stress[4])
-                                sig_sr_3_dict['coor_y_sig_sr_3L'][key] = float(sig_sr_3_stress[5])
-                                sig_sr_3_dict['coor_z_sig_sr_3L'][key] = float(sig_sr_3_stress[6])
+                                sig_sr_3_dict['sig_sr_3L'][key] = float(sig_sr_3_stress[2])                                                            
+                                sig_sr_3_dict['coor_x_sig_sr_3L'][key] = float(sig_sr_3_stress[3])
+                                sig_sr_3_dict['coor_y_sig_sr_3L'][key] = float(sig_sr_3_stress[4])
+                                sig_sr_3_dict['coor_z_sig_sr_3L'][key] = float(sig_sr_3_stress[5])
                             
                             gplist.append(sig_sr_3_dict)                                     
 
@@ -617,18 +704,17 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_4 = sig_sr_4_file.readlines()
                                         
                             
-                            sig_sr_4_dict = {'GP_name_4L': {},'elem_nr_4L': {}, 'sig_sr_4L_x': {}, 'sig_sr_4L_y': {}, 'coor_x_sig_sr_4L': {} , 'coor_y_sig_sr_4L': {}, 'coor_z_sig_sr_4L': {}} 
+                            sig_sr_4_dict = {'GP_name_4L': {},'elem_nr_4L': {}, 'sig_sr_4L': {}, 'coor_x_sig_sr_4L': {} , 'coor_y_sig_sr_4L': {}, 'coor_z_sig_sr_4L': {}} 
                             for i in range(len(sig_sr_4)):
                                 sig_sr_4_string = sig_sr_4[i].split(',')
                                 sig_sr_4_stress = map(float, sig_sr_4_string)
                                 key = int(sig_sr_4_stress[0]) - 1                            
                                 sig_sr_4_dict['GP_name_4L'][key] = float(sig_sr_4_stress[0])
                                 sig_sr_4_dict['elem_nr_4L'][key] = float(sig_sr_4_stress[1])
-                                sig_sr_4_dict['sig_sr_4L_x'][key] = float(sig_sr_4_stress[2])
-                                sig_sr_4_dict['sig_sr_4L_y'][key] = float(sig_sr_4_stress[3])                            
-                                sig_sr_4_dict['coor_x_sig_sr_4L'][key] = float(sig_sr_4_stress[4])
-                                sig_sr_4_dict['coor_y_sig_sr_4L'][key] = float(sig_sr_4_stress[5])
-                                sig_sr_4_dict['coor_z_sig_sr_4L'][key] = float(sig_sr_4_stress[6])
+                                sig_sr_4_dict['sig_sr_4L'][key] = float(sig_sr_4_stress[2])                                
+                                sig_sr_4_dict['coor_x_sig_sr_4L'][key] = float(sig_sr_4_stress[3])
+                                sig_sr_4_dict['coor_y_sig_sr_4L'][key] = float(sig_sr_4_stress[4])
+                                sig_sr_4_dict['coor_z_sig_sr_4L'][key] = float(sig_sr_4_stress[5])
                             
                             gplist.append(sig_sr_4_dict) 
                                             # 
