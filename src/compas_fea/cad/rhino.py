@@ -1405,7 +1405,8 @@ def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
         coor_intp_layer_x=data['coor_intp_layer_x_bot']     
         coor_intp_layer_y=data['coor_intp_layer_y_bot']     
         coor_intp_layer_z=data['coor_intp_layer_z_bot']               
-        
+   
+
     elem_nr=data['elem_nr_bot']
     loc_x_glob_x=data['loc_x_glob_x']        
     loc_x_glob_y=data['loc_x_glob_y'] 

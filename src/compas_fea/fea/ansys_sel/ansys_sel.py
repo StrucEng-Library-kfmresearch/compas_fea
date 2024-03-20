@@ -546,8 +546,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 strain_x_y_xy_dict['eps_bruch'][key] = float(strain_x_y_xy[5])  
                                 strain_x_y_xy_dict['coor_intp_layer_x_bot'][key] = float(strain_x_y_xy[6])
                                 strain_x_y_xy_dict['coor_intp_layer_y_bot'][key] = float(strain_x_y_xy[7])
-                                strain_x_y_xy_dict['coor_intp_layer_z_bot'][key] = float(strain_x_y_xy[8])                                                                      
-                            
+                                strain_x_y_xy_dict['coor_intp_layer_z_bot'][key] = float(strain_x_y_xy[8])                                                                                                      
                             gplist.append(strain_x_y_xy_dict)
 
                     
