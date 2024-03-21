@@ -61,41 +61,99 @@ class Results(object):
         num_elements = len(elements)
         properties = self.structure.element_properties
         sections = self.structure.sections
+        materials = self.structure.materials
         sets = self.structure.sets
         
-        self.write_line('*DIM,elem_infos,ARRAY,{0},8'.format(num_elements))   
+        self.write_line('*DIM,elem_infos,ARRAY,{0},20'.format(num_elements))   
         fname = 'elem_infos'
+        fname_2 = 'elem_infos_2'
+        fname_3 = 'elem_infos_3'
+        fname_4 = 'elem_infos_4'
         name_ = 'elem_infos'
             
         # Bestimmung der elementspezifischen Werte
         for key in sorted(properties):
+            
+            # Import properties, sections, material, type, set, ...
             property = properties[key]
             section = sections[property.section]
+            material = materials[property.material]                  
             stype = section.__name__
             elset = property.elset
             element_set = sets[property.elset]
             selection = property.elements if property.elements else sets[elset].selection # Zum elemeset zugehorige Elementnummern
-             
+            mtype = material.__name__
+
+            # define element type 
             if stype == 'ShellSection':
                 stype_number=1 # Schalenelement
             else:
                 stype_number=0 # MPC or Other
 
-            
+            # loop all Elements, extract local coor, psi, fsy, fsu for cmm usermat 
             for ele_num in sorted(selection):                    
                 ele_num_adj=ele_num+1
 
-                if stype_number == 1: # Schalenelement
+                # Element infos only for shellelements
+                if stype_number == 1: 
                     loc_coor_EV_XA= section.loc_coords_EV_XA
                     loc_coor_EV_YA= section.loc_coords_EV_YA
                     loc_coor_EV_ZA= section.loc_coords_EV_ZA
+
+                    # Bewehrungswinkel psi, fsy, fsu nur bei cmm-usermat; Bei Sandwichmodell gehen Werte in Funktion Sandwichmodel mitein
+                    if mtype != 'ElasticIsotropic':  
+                        psi1=material.psi1
+                        psi2=material.psi2
+                        psi3=material.psi3
+                        psi4=material.psi4                    
+                        
+                        fsy1=material.fsy1 
+                        fsy2=material.fsy2
+                        fsy3=material.fsy3
+                        fsy4=material.fsy4
+
+                        fsu1=material.fsu1 
+                        fsu2=material.fsu2
+                        fsu3=material.fsu3
+                        fsu4=material.fsu4                        
                        
 
                     if element_set.type != 'node':   
                         e_x=loc_coor_EV_XA.get('EV_XA',None)
                         e_y=loc_coor_EV_YA.get('EV_YA',None)
                         e_z=loc_coor_EV_ZA.get('EV_ZA',None)
-                        
+                        if mtype != 'ElasticIsotropic':  
+                            psi_1=psi1.get('psi1',None)
+                            psi_2=psi2.get('psi2',None)
+                            psi_3=psi3.get('psi3',None)
+                            psi_4=psi4.get('psi4',None)
+
+                            fsy_1=fsy1.get('fsy1',None)
+                            fsy_2=fsy2.get('fsy2',None)
+                            fsy_3=fsy3.get('fsy3',None)
+                            fsy_4=fsy4.get('fsy4',None)
+
+                            fsu_1=fsu1.get('fsu1',None)
+                            fsu_2=fsu2.get('fsu2',None)
+                            fsu_3=fsu3.get('fsu3',None)
+                            fsu_4=fsu4.get('fsu4',None)                            
+
+                        else:
+                            psi_1=0# psi1.get('psi1',None)
+                            psi_2=0# psi2.get('psi2',None)
+                            psi_3=0# psi3.get('psi3',None)
+                            psi_4=0# psi4.get('psi4',None)
+                            fsy_1=0
+                            fsy_2=0
+                            fsy_3=0
+                            fsy_4=0
+                            fsu_1=0
+                            fsu_2=0
+                            fsu_3=0
+                            fsu_4=0
+
+
+                    # Save element infos in vector elem_infos
                     self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=1, mpc and other =0'.format(ele_num_adj,stype_number))   # Elementype     
                     self.write_line('elem_infos({0},2)={1} ! Elementnumber'.format(ele_num_adj,ele_num_adj))   # Elementnumber 
                     self.write_line('elem_infos({0},3)={1}! loccal x-axis direction global x'.format(ele_num_adj,e_x[0]))     
@@ -103,7 +161,19 @@ class Results(object):
                     self.write_line('elem_infos({0},5)={1}! loccal x-axis direction global z'.format(ele_num_adj,e_x[2]))    
                     self.write_line('elem_infos({0},6)={1}! loccal y-axis direction global x'.format(ele_num_adj,e_y[0]))      
                     self.write_line('elem_infos({0},7)={1}! loccal y-axis direction global y'.format(ele_num_adj,e_y[1])) 
-                    self.write_line('elem_infos({0},8)={1}! loccal y-axis direction global z'.format(ele_num_adj,e_y[2]))                              
+                    self.write_line('elem_infos({0},8)={1}! loccal y-axis direction global z'.format(ele_num_adj,e_y[2]))  
+                    self.write_line('elem_infos({0},9)={1}! psi1'.format(ele_num_adj,psi_1))  
+                    self.write_line('elem_infos({0},10)={1}! psi2'.format(ele_num_adj,psi_2)) 
+                    self.write_line('elem_infos({0},11)={1}! psi3'.format(ele_num_adj,psi_3)) 
+                    self.write_line('elem_infos({0},12)={1}! psi4'.format(ele_num_adj,psi_4))                                                 
+                    self.write_line('elem_infos({0},13)={1}! fsy1'.format(ele_num_adj,fsy_1))           
+                    self.write_line('elem_infos({0},14)={1}! fsy2'.format(ele_num_adj,fsy_2))           
+                    self.write_line('elem_infos({0},15)={1}! fsy3'.format(ele_num_adj,fsy_3))           
+                    self.write_line('elem_infos({0},16)={1}! fsy4'.format(ele_num_adj,fsy_4))           
+                    self.write_line('elem_infos({0},17)={1}! fsu1'.format(ele_num_adj,fsu_1))           
+                    self.write_line('elem_infos({0},18)={1}! fsu2'.format(ele_num_adj,fsu_2))           
+                    self.write_line('elem_infos({0},19)={1}! fsu3'.format(ele_num_adj,fsu_3))           
+                    self.write_line('elem_infos({0},20)={1}! fsu4'.format(ele_num_adj,fsu_4))           
                 
                 else:
                     self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=0, mpc and other =1'.format(ele_num_adj,stype_number))   # Elementype     
@@ -115,6 +185,7 @@ class Results(object):
                     self.write_line('elem_infos({0},7)=0'.format(ele_num_adj)) 
                     self.write_line('elem_infos({0},8)=0'.format(ele_num_adj))
 
+        # Save elem_infos part 1
         cFile = open(os.path.join(path, filename), 'a')                                       
         self.write_line('allsel')
         self.write_line('*get, nelem, elem,, count ')
@@ -126,6 +197,45 @@ class Results(object):
         self.write_line('ETABLE, ERAS ')
         self.write_line('! ')
         cFile.close()
+
+        # Save elem_infos part 2
+        cFile = open(os.path.join(path, filename), 'a')
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname_2 + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,9), elem_infos(i,10), elem_infos(i,11), elem_infos(i,12)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close() 
+
+        # Save elem_infos part 3
+        cFile = open(os.path.join(path, filename), 'a')
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname_3 + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,13), elem_infos(i,14), elem_infos(i,15), elem_infos(i,16)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close()    
+
+        # Save elem_infos part 4
+        cFile = open(os.path.join(path, filename), 'a')
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname_4 + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,17), elem_infos(i,18), elem_infos(i,19), elem_infos(i,20)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close()                     
         
         # ------------------------------------------------------------------
         # Schleife uber alle angegebenen lstep (e.g. 'step_3')
@@ -967,6 +1077,7 @@ class Results(object):
 
                 # Bot Layer (1)
                 # --------------------------------------------
+                
                 fname = str(step_name) + '_' + 'strains_bot'
                 name_ = 'eps_GP'
                 name_elem_nr = 'elem_nr'
@@ -1079,7 +1190,19 @@ class Results(object):
                 name_coor_z_sig_sr_3L ='coor_z_sig_sr_3L'    
                 name_coor_x_sig_sr_4L ='coor_x_sig_sr_4L'
                 name_coor_y_sig_sr_4L ='coor_y_sig_sr_4L'
-                name_coor_z_sig_sr_4L ='coor_z_sig_sr_4L'                              
+                name_coor_z_sig_sr_4L ='coor_z_sig_sr_4L'     
+                name_psi_1L ='psi_1L'
+                name_psi_2L ='psi_2L'
+                name_psi_3L ='psi_3L'
+                name_psi_4L ='psi_4L'
+                name_fsy_1L ='fsy_1L'
+                name_fsy_2L ='fsy_2L'
+                name_fsy_3L ='fsy_3L'
+                name_fsy_4L ='fsy_4L'
+                name_fsu_1L ='fsu_1L'
+                name_fsu_2L ='fsu_2L'
+                name_fsu_3L ='fsu_3L'
+                name_fsu_4L ='fsu_4L'
 
         
                 cFile = open(os.path.join(path, filename), 'a')
@@ -1113,8 +1236,19 @@ class Results(object):
                 self.write_line('*DIM,coor_z_sig_sr_3L,ARRAY,4*NrE,1') 
                 self.write_line('*DIM,coor_x_sig_sr_4L,ARRAY,4*NrE,1')
                 self.write_line('*DIM,coor_y_sig_sr_4L,ARRAY,4*NrE,1')
-                self.write_line('*DIM,coor_z_sig_sr_4L,ARRAY,4*NrE,1')                                                      
-  
+                self.write_line('*DIM,coor_z_sig_sr_4L,ARRAY,4*NrE,1')     
+                self.write_line('*DIM,psi_1L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,psi_2L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,psi_3L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,psi_4L,ARRAY,4*NrE,1')                                                 
+                self.write_line('*DIM,fsy_1L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fsy_2L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fsy_3L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fsy_4L,ARRAY,4*NrE,1')  
+                self.write_line('*DIM,fsu_1L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fsu_2L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fsu_3L,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fsu_4L,ARRAY,4*NrE,1')                  
                 
                 # Extract Principal stresses from usermat
                 self.write_line('aux=0')
@@ -1154,7 +1288,10 @@ class Results(object):
                 self.write_line('*GET,coor_x_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,64')
                 self.write_line('*GET,coor_z_sig_sr_1L(aux,1),NODE,N_N(kk),SVAR,65')                  
-                
+                self.write_line('psi_1L(aux,1)=elem_infos(ii,9)')           
+                self.write_line('fsy_1L(aux,1)=elem_infos(ii,13)') 
+                self.write_line('fsu_1L(aux,1)=elem_infos(ii,17)') 
+
                 # Layer 2 for x- and y direction
                 self.write_line('LAYER,layer_nr_2L')
                 self.write_line('*GET,sig_sr_2L_Druck_x,NODE,N_N(kk),SVAR,13')
@@ -1170,7 +1307,10 @@ class Results(object):
                 self.write_line('sig_sr_2L(aux,1)=sig_sr_2L_x+sig_sr_2L_y') # fiktive x und y Richtung zusammenzahlen
                 self.write_line('*GET,coor_x_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,64')
-                self.write_line('*GET,coor_z_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,65')     
+                self.write_line('*GET,coor_z_sig_sr_2L(aux,1),NODE,N_N(kk),SVAR,65')   
+                self.write_line('psi_2L(aux,1)=elem_infos(ii,10)')  
+                self.write_line('fsy_2L(aux,1)=elem_infos(ii,14)')  
+                self.write_line('fsu_2L(aux,1)=elem_infos(ii,18)') 
 
                 # Layer 3 for x- and y direction
                 self.write_line('LAYER,layer_nr_3L')
@@ -1188,6 +1328,9 @@ class Results(object):
                 self.write_line('*GET,coor_x_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,64')
                 self.write_line('*GET,coor_z_sig_sr_3L(aux,1),NODE,N_N(kk),SVAR,65')     
+                self.write_line('psi_3L(aux,1)=elem_infos(ii,11)')   
+                self.write_line('fsy_3L(aux,1)=elem_infos(ii,15)') 
+                self.write_line('fsu_3L(aux,1)=elem_infos(ii,19)')  
 
                 # Layer 4 for x- and y direction
                 self.write_line('LAYER,layer_nr_4L')
@@ -1204,7 +1347,10 @@ class Results(object):
                 self.write_line('sig_sr_4L(aux,1)=sig_sr_4L_x+sig_sr_4L_y') # fiktive x und y Richtung zusammenzahlen
                 self.write_line('*GET,coor_x_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,63')
                 self.write_line('*GET,coor_y_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,64')
-                self.write_line('*GET,coor_z_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,65')          
+                self.write_line('*GET,coor_z_sig_sr_4L(aux,1),NODE,N_N(kk),SVAR,65') 
+                self.write_line('psi_4L(aux,1)=elem_infos(ii,12)')    
+                self.write_line('fsy_4L(aux,1)=elem_infos(ii,16)')  
+                self.write_line('fsu_4L(aux,1)=elem_infos(ii,20)')         
 
                 self.write_line('*ENDDO')
                 self.write_line('*DEL,N_N,,NOPR')
@@ -1217,28 +1363,27 @@ class Results(object):
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_1L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_1L + '(1) , \',\' , ' + name_coor_x_sig_sr_1L + '(1) , \',\' ,'+ name_coor_y_sig_sr_1L + '(1) , \',\' ,'  + name_coor_z_sig_sr_1L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_1L + '(1) , \',\' , ' + name_coor_x_sig_sr_1L + '(1) , \',\' ,'+ name_coor_y_sig_sr_1L + '(1) , \',\' ,'  + name_coor_z_sig_sr_1L + '(1), \',\' ,'  + name_psi_1L + '(1), \',\' ,'  + name_fsy_1L + '(1), \',\' ,'  + name_fsu_1L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_2L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_2L + '(1) , \',\' ,' + name_coor_x_sig_sr_2L + '(1) , \',\' ,'+ name_coor_y_sig_sr_2L + '(1) , \',\' ,'  + name_coor_z_sig_sr_2L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_2L + '(1) , \',\' ,' + name_coor_x_sig_sr_2L + '(1) , \',\' ,'+ name_coor_y_sig_sr_2L + '(1) , \',\' ,'  + name_coor_z_sig_sr_2L + '(1), \',\' ,'  + name_psi_2L + '(1), \',\' ,'  + name_fsy_2L + '(1), \',\' ,'  + name_fsu_2L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')                
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_3L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_3L + '(1) , \',\' , ' + name_coor_x_sig_sr_3L + '(1) , \',\' ,'+ name_coor_y_sig_sr_3L + '(1) , \',\' ,'  + name_coor_z_sig_sr_3L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_3L + '(1) , \',\' , ' + name_coor_x_sig_sr_3L + '(1) , \',\' ,'+ name_coor_y_sig_sr_3L + '(1) , \',\' ,'  + name_coor_z_sig_sr_3L + '(1), \',\' ,'  + name_psi_3L + '(1), \',\' ,'  + name_fsy_3L + '(1), \',\' ,'  + name_fsu_3L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')   
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
                 self.write_line('*cfopen,' + out_path + '/' + fname_4L + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_4L + '(1) , \',\' , '  + name_coor_x_sig_sr_4L + '(1) , \',\' ,'+ name_coor_y_sig_sr_4L + '(1) , \',\' ,'  + name_coor_z_sig_sr_4L + '(1)')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_sig_sr_4L + '(1) , \',\' , '  + name_coor_x_sig_sr_4L + '(1) , \',\' ,'+ name_coor_y_sig_sr_4L + '(1) , \',\' ,'  + name_coor_z_sig_sr_4L + '(1), \',\' ,'  + name_psi_4L + '(1), \',\' ,'  + name_fsy_4L + '(1), \',\' ,'  + name_fsu_4L + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')   
-
 
                 self.write_line('!')
                 self.write_line('!')

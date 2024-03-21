@@ -627,7 +627,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_1 = sig_sr_1_file.readlines()
                                         
                             
-                            sig_sr_1_dict = {'GP_name_1L': {},'elem_nr_1L': {}, 'sig_sr_1L': {}, 'coor_x_sig_sr_1L': {} , 'coor_y_sig_sr_1L': {}, 'coor_z_sig_sr_1L': {}} 
+                            sig_sr_1_dict = {'GP_name_1L': {},'elem_nr_1L': {}, 'sig_sr_1L': {}, 'coor_x_sig_sr_1L': {} , 'coor_y_sig_sr_1L': {}, 'coor_z_sig_sr_1L': {}, 'psi_1L': {}, 'fsy_1L': {}, 'fsu_1L': {}} 
                             for i in range(len(sig_sr_1)):
                                 sig_sr_1_string = sig_sr_1[i].split(',')
                                 sig_sr_1_stress = map(float, sig_sr_1_string)
@@ -638,6 +638,9 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 sig_sr_1_dict['coor_x_sig_sr_1L'][key] = float(sig_sr_1_stress[3])
                                 sig_sr_1_dict['coor_y_sig_sr_1L'][key] = float(sig_sr_1_stress[4])
                                 sig_sr_1_dict['coor_z_sig_sr_1L'][key] = float(sig_sr_1_stress[5])
+                                sig_sr_1_dict['psi_1L'][key] = float(sig_sr_1_stress[6])
+                                sig_sr_1_dict['fsy_1L'][key] = float(sig_sr_1_stress[7])
+                                sig_sr_1_dict['fsu_1L'][key] = float(sig_sr_1_stress[8])
                             
                             gplist.append(sig_sr_1_dict)  
                         
@@ -652,7 +655,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_2 = sig_sr_2_file.readlines()
                                         
                             
-                            sig_sr_2_dict = {'GP_name_2L': {},'elem_nr_2L': {}, 'sig_sr_2L': {}, 'coor_x_sig_sr_2L': {} , 'coor_y_sig_sr_2L': {}, 'coor_z_sig_sr_2L': {}} 
+                            sig_sr_2_dict = {'GP_name_2L': {},'elem_nr_2L': {}, 'sig_sr_2L': {}, 'coor_x_sig_sr_2L': {} , 'coor_y_sig_sr_2L': {}, 'coor_z_sig_sr_2L': {}, 'psi_2L': {}, 'fsy_2L': {}, 'fsu_2L': {}}  
                             for i in range(len(sig_sr_2)):
                                 sig_sr_2_string = sig_sr_2[i].split(',')
                                 sig_sr_2_stress = map(float, sig_sr_2_string)
@@ -663,6 +666,9 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 sig_sr_2_dict['coor_x_sig_sr_2L'][key] = float(sig_sr_2_stress[3])
                                 sig_sr_2_dict['coor_y_sig_sr_2L'][key] = float(sig_sr_2_stress[4])
                                 sig_sr_2_dict['coor_z_sig_sr_2L'][key] = float(sig_sr_2_stress[5])
+                                sig_sr_2_dict['psi_2L'][key] = float(sig_sr_2_stress[6])
+                                sig_sr_2_dict['fsy_2L'][key] = float(sig_sr_2_stress[7])
+                                sig_sr_2_dict['fsu_2L'][key] = float(sig_sr_2_stress[8])
                             
                             gplist.append(sig_sr_2_dict)  
                         
@@ -677,7 +683,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_3 = sig_sr_3_file.readlines()
                                         
                             
-                            sig_sr_3_dict = {'GP_name_3L': {},'elem_nr_3L': {}, 'sig_sr_3L': {}, 'coor_x_sig_sr_3L': {} , 'coor_y_sig_sr_3L': {}, 'coor_z_sig_sr_3L': {}} 
+                            sig_sr_3_dict = {'GP_name_3L': {},'elem_nr_3L': {}, 'sig_sr_3L': {}, 'coor_x_sig_sr_3L': {} , 'coor_y_sig_sr_3L': {}, 'coor_z_sig_sr_3L': {}, 'psi_3L': {}, 'fsy_3L': {}, 'fsu_3L': {}}   
                             for i in range(len(sig_sr_3)):
                                 sig_sr_3_string = sig_sr_3[i].split(',')
                                 sig_sr_3_stress = map(float, sig_sr_3_string)
@@ -688,6 +694,9 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 sig_sr_3_dict['coor_x_sig_sr_3L'][key] = float(sig_sr_3_stress[3])
                                 sig_sr_3_dict['coor_y_sig_sr_3L'][key] = float(sig_sr_3_stress[4])
                                 sig_sr_3_dict['coor_z_sig_sr_3L'][key] = float(sig_sr_3_stress[5])
+                                sig_sr_3_dict['psi_3L'][key] = float(sig_sr_3_stress[6])                                
+                                sig_sr_3_dict['fsy_3L'][key] = float(sig_sr_3_stress[7])
+                                sig_sr_3_dict['fsu_3L'][key] = float(sig_sr_3_stress[8])                                
                             
                             gplist.append(sig_sr_3_dict)                                     
 
@@ -703,7 +712,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             sig_sr_4 = sig_sr_4_file.readlines()
                                         
                             
-                            sig_sr_4_dict = {'GP_name_4L': {},'elem_nr_4L': {}, 'sig_sr_4L': {}, 'coor_x_sig_sr_4L': {} , 'coor_y_sig_sr_4L': {}, 'coor_z_sig_sr_4L': {}} 
+                            sig_sr_4_dict = {'GP_name_4L': {},'elem_nr_4L': {}, 'sig_sr_4L': {}, 'coor_x_sig_sr_4L': {} , 'coor_y_sig_sr_4L': {}, 'coor_z_sig_sr_4L': {}, 'psi_4L': {}, 'fsy_4L': {}, 'fsu_4L': {}}  
                             for i in range(len(sig_sr_4)):
                                 sig_sr_4_string = sig_sr_4[i].split(',')
                                 sig_sr_4_stress = map(float, sig_sr_4_string)
@@ -714,6 +723,9 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 sig_sr_4_dict['coor_x_sig_sr_4L'][key] = float(sig_sr_4_stress[3])
                                 sig_sr_4_dict['coor_y_sig_sr_4L'][key] = float(sig_sr_4_stress[4])
                                 sig_sr_4_dict['coor_z_sig_sr_4L'][key] = float(sig_sr_4_stress[5])
+                                sig_sr_4_dict['psi_4L'][key] = float(sig_sr_4_stress[6])
+                                sig_sr_4_dict['fsy_4L'][key] = float(sig_sr_4_stress[7])
+                                sig_sr_4_dict['fsu_4L'][key] = float(sig_sr_4_stress[8])   
                             
                             gplist.append(sig_sr_4_dict) 
                                             # 

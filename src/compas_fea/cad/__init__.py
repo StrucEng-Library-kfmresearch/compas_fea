@@ -36,6 +36,7 @@ Rhino
     plot_data
     plot_principal_stresses
     plot_principal_strains
+    plot_steel_stresses
     plot_voxels
     weld_meshes_from_layer
 
@@ -66,6 +67,7 @@ if compas.RHINO:
         plot_data,
         plot_principal_stresses,
         plot_principal_strains,
+        plot_steel_stresses,
         plot_voxels,
         weld_meshes_from_layer,
     )
@@ -87,6 +89,7 @@ if compas.RHINO:
         'plot_data',
         'plot_principal_stresses',
         'plot_principal_strains',
+        'plot_steel_stresses',
         'plot_voxels',
         'weld_meshes_from_layer',
     ]

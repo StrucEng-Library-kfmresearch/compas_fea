@@ -12,14 +12,16 @@ if compas.RHINO:
 
 from compas.datastructures.mesh import Mesh
 from compas.datastructures import Network
-from compas.geometry import Frame, Transformation, Vector
+from compas.geometry import Frame, Transformation, Vector, matrix_from_axis_and_angle
 from compas.geometry import add_vectors
 from compas.geometry import cross_vectors
+from compas.geometry import normalize_vector
 from compas.geometry import length_vector
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
 from compas_fea.structure import Structure
 from time import time
+import math
 
 from compas_fea.utilities import colorbar
 from compas_fea.utilities import extrude_mesh
@@ -59,6 +61,7 @@ __all__ = [
     'plot_data',
     'plot_principal_stresses',
     'plot_principal_strains',
+    'plot_steel_stresses',
     'plot_voxels',
     'weld_meshes_from_layer',
 ]
@@ -1149,6 +1152,8 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
     toc2 = time() - tic
     print('Plot {1} results in Rhino successful in {0:.3f} s'.format(toc2,field))
 
+
+
 def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     """
     Plots the principal stresses of the elements.
@@ -1359,7 +1364,6 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
             pass
    
 
-# --------------------------------------------------------------------------------------
 def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
     """
     Plots the principal strains of the elements.
@@ -1561,7 +1565,169 @@ def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
                     rs.ObjectColor(id1, col1)
         else:
             pass
-   # -----------    -----------------------------------------------------------------------------
+
+
+
+def plot_steel_stresses(structure, step, Reinf_layer, scale=1, layer=None):
+    """
+    Plots the steel stresses on GP
+
+    Parameters
+    ----------
+    structure : obj
+        Structure object.
+    step : str
+        Name of the Step.
+    sp : str
+        'sp1' or 'sp5' for stection point 1 or 5.
+    stype : str
+        'max' or 'min' for maximum or minimum principal stresses.
+    scale : float
+        Scale on the length of the line markers (usually 10^6).
+    layer : str
+        Layer name for plotting.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - Centroids are taken on the undeformed geometry.
+
+    """
+
+    # Einlesen der Daten
+    # --------------------------------------------------------------------------    
+    data = structure.results[step]['GP'] 
+
+        
+        
+    # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
+    if Reinf_layer == 'RL_1':
+        sig_sr_layer=data['sig_sr_1L']    
+        coor_x_steel_layer=data['coor_x_sig_sr_1L']     
+        coor_y_steel_layer=data['coor_y_sig_sr_1L']     
+        coor_z_steel_layer=data['coor_z_sig_sr_1L']   
+        psi=data['psi_1L']      
+        fsy=data['fsy_1L']  
+        fsu=data['fsu_1L']  
+
+    elif Reinf_layer == 'RL_2':
+        sig_sr_layer=data['sig_sr_2L']    
+        coor_x_steel_layer=data['coor_x_sig_sr_2L']     
+        coor_y_steel_layer=data['coor_y_sig_sr_2L']     
+        coor_z_steel_layer=data['coor_z_sig_sr_2L']   
+        psi=data['psi_2L']    
+        fsy=data['fsy_2L']  
+        fsu=data['fsu_2L']  
+
+    elif Reinf_layer == 'RL_3':
+        sig_sr_layer=data['sig_sr_3L']    
+        coor_x_steel_layer=data['coor_x_sig_sr_3L']     
+        coor_y_steel_layer=data['coor_y_sig_sr_3L']     
+        coor_z_steel_layer=data['coor_z_sig_sr_3L']   
+        psi=data['psi_3L'] 
+        fsy=data['fsy_3L']  
+        fsu=data['fsu_3L']      
+
+    elif Reinf_layer == 'RL_4':
+        sig_sr_layer=data['sig_sr_4L']    
+        coor_x_steel_layer=data['coor_x_sig_sr_4L']     
+        coor_y_steel_layer=data['coor_y_sig_sr_4L']     
+        coor_z_steel_layer=data['coor_z_sig_sr_4L']   
+        psi=data['psi_4L']    
+        fsy=data['fsy_4L']  
+        fsu=data['fsu_4L']  
+        
+    loc_x_glob_x=data['loc_x_glob_x']        
+    loc_x_glob_y=data['loc_x_glob_y'] 
+    loc_x_glob_z=data['loc_x_glob_z'] 
+    loc_y_glob_x=data['loc_y_glob_x']        
+    loc_y_glob_y=data['loc_y_glob_y'] 
+    loc_y_glob_z=data['loc_y_glob_z']  
+    elem_typ=data['elem_typ']   
+
+    # Aufbau Layer
+    # --------------------------------------------------------------------------
+    if not layer:
+            layer = '{0}_steel_stresses_{1}_Reinf_layer'.format(step, Reinf_layer)
+    rs.CurrentLayer(rs.AddLayer(layer))
+    rs.DeleteObjects(rs.ObjectsByLayer(layer))
+    rs.EnableRedraw(False)
+
+    # Ploten der Stahlspannungen
+    # --------------------------------------------------------------------------
+    length_steel_stress=len(sig_sr_layer) 
+
+    for b in range(length_steel_stress): 
+        
+        elem_typ_GP=elem_typ[b]
+        
+        if elem_typ_GP == 1: # 1=shell 0=MPR or others
+            sig_sr_GP=sig_sr_layer[b]
+            
+            if sig_sr_GP > 1: # plot only values higher 1 MPa 
+                
+                coor_intp_layer_x_GP=coor_x_steel_layer[b]
+                coor_intp_layer_y_GP=coor_y_steel_layer[b]
+                coor_intp_layer_z_GP=coor_z_steel_layer[b]
+                angle=math.radians(psi[b])*-1 # Vorzeichen zur Berechnung der Darstellung gegenuber dem Usermat umkehren 
+                loc_x_glob_x_GP=loc_x_glob_x[b]
+                loc_x_glob_y_GP=loc_x_glob_y[b]
+                loc_x_glob_z_GP=loc_x_glob_z[b]
+                loc_y_glob_x_GP=loc_y_glob_x[b]      
+                loc_y_glob_y_GP=loc_y_glob_y[b] 
+                loc_y_glob_z_GP=loc_y_glob_z[b]          
+                loc_x_glob_GP=[loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP]
+                loc_y_glob_GP=[loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP]
+
+                centroid=[coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP]  
+
+                # step 1: Bestimmung der Vektoren aus den Stahlspannungen in globaler x-Richtung (Annahme: fikti alle Stahlspannung zeigen in x-Richtung)
+                x_fiktiv=sig_sr_GP*scale
+
+                y_fikiv=0      
+                v_plus_fiktiv = Vector(x_fiktiv*0.5, y_fikiv*0.5,0.) 
+                v_minus_fiktiv = Vector(-x_fiktiv*0.5, -y_fikiv*0.5,0.)                                                            
+               
+                # step 2: Transformation der globlane x-Richtung (world XY) in lokale Ebene (lokales Koordinantesystem)
+                Frame_1 = Frame(centroid, loc_x_glob_GP, loc_y_glob_GP)  # Richtung lok koordinatensystem                
+                T = Transformation.from_frame(Frame_1)                                  
+                v_plus_fiktiv_trans=v_plus_fiktiv.transformed(T) # transformation from world XY to frame=lokales Koord.
+                v_minus_fiktiv_trans=v_minus_fiktiv.transformed(T)  # transformation from world XY to frame=lokales Koord.
+                
+                # step 3: Normalvektor (lokale z-Achse in globlaen Koordianten) aus Kruezprodukt der lokalen x,y Achsen in globalen Koordianten bestimmen
+                vector_cross=cross_vectors(loc_x_glob_GP,loc_y_glob_GP)
+                vector_cross_normal=normalize_vector(vector_cross)
+
+                # step 4: Rotation der nun transformieren Vektoren um den Bewehrungswinkle (angle) um die lokale z-Achse
+                T = matrix_from_axis_and_angle(vector_cross_normal, angle) 
+                v_plus_fiktiv_trans_rot=v_plus_fiktiv_trans.transformed(T) 
+                v_minus_fiktiv_trans_rot=v_minus_fiktiv_trans.transformed(T) 
+
+                # step 5: Ploten in Rhino
+
+                if sig_sr_GP <= fsy[b]:
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
+                    col1=[0,0,0]
+                    rs.ObjectColor(id1, col1)
+                    #rs.ObjectPrintWidth(id1, sig_sr_GP*scale_line_width) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
+                elif sig_sr_GP > fsy[b] and sig_sr_GP <= fsu[b]:
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
+                    col1=[255,165,0]
+                    rs.ObjectColor(id1, col1)
+                    #rs.ObjectPrintWidth(id1, sig_sr_GP*scale_line_width) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
+                elif sig_sr_GP > fsu[b]:
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
+                    col1=[255,0,0]
+                    rs.ObjectColor(id1, col1)
+                    #rs.ObjectPrintWidth(id1, sig_sr_GP*scale_line_width) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
+
+        else:
+            pass
+
+
 
 def plot_voxels(structure, step, field='smises', cbar=[None, None], iptype='mean', nodal='mean', vdx=None, mode=''):
     """
