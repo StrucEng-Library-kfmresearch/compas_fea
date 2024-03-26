@@ -258,7 +258,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
             structure.results[step] = {} #creates an empty dict for each analysis step
             if structure.steps[step].__name__ == 'GeneralStep':
                 
-
+                
                 # Aufbau vektoren fur Node und Element Daten
                 elem_infos_list=[]
                 rlist = []    
@@ -273,11 +273,12 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
 
                 #if no error occured read out results and write to results dict
                 else:
-                    # extract gerneal element infos
-                    filename = step + '_elem_infos.txt'
+                    # extract gerneal element infos                    
+                    #filename = step + '_elem_infos.txt'
+                    filename = 'elem_infos.txt'
 
                     isfile_filename=str(out_path) + "\\" + filename
-
+            
                     if os.path.isfile(isfile_filename)==True:
                         
                         efile = open(os.path.join(out_path, filename), 'r')    
@@ -288,6 +289,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                         
                         #print
                         for i in range(len(e_i)):
+                            
                             e_i_string = e_i[i].split(',')
                             ele = map(float, e_i_string[1:])
                             key = int(ele[0]) - 1                                                    
@@ -813,7 +815,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
             if elem_infos_list:
                 structure.results[step]['element_info'] = {}
                 for elem_infos_dict in elem_infos_list:
-                    for key in elem_infos_dict:
+                    for key in elem_infos_dict:                        
                         structure.results[step]['element_info'][key] = elem_infos_dict[key]  
 
 

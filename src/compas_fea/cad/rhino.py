@@ -27,7 +27,7 @@ from compas_fea.utilities import colorbar
 from compas_fea.utilities import extrude_mesh
 from compas_fea.utilities import network_order
 from compas.rpc import Proxy
-
+import statistics
 
 if not compas.IPY:
     from compas_fea.utilities import meshing
@@ -62,6 +62,7 @@ __all__ = [
     'plot_principal_stresses',
     'plot_principal_strains',
     'plot_steel_stresses',
+    'plot_steel_shear',
     'plot_voxels',
     'weld_meshes_from_layer',
 ]
@@ -2051,6 +2052,130 @@ def plot_steel_stresses(structure, step, Reinf_layer, cbar_size=1, scale=1, laye
         else:
             pass
 
+
+
+def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, layer=None, numeric='no'):
+
+
+    # extract data
+    kmax = structure.element_count() # Anzahl Elemente, Startwert bei 1 nicht bei 0!
+    data = structure.results[step]['element_info']
+
+
+    loc_x_glob_x=data['elem_loc_x_glob_x'].values()        
+    loc_x_glob_y=data['elem_loc_x_glob_y'].values()    
+    loc_x_glob_z=data['elem_loc_x_glob_z'].values()    
+    loc_y_glob_x=data['elem_loc_y_glob_x'].values()    
+    loc_y_glob_y=data['elem_loc_y_glob_y'].values()    
+    loc_y_glob_z=data['elem_loc_y_glob_z'].values()    
+
+    # Aufbau Layer
+    # --------------------------------------------------------------------------
+    if not layer:
+            layer = '{0}_principial_shear'.format(step)
+    rs.CurrentLayer(rs.AddLayer(layer))
+    rs.DeleteObjects(rs.ObjectsByLayer(layer))
+    rs.EnableRedraw(False)
+
+
+    # Start 
+    for k in range(kmax): 
+        ele_type = structure.results[step]['element']['ele_type'][k].values()
+        if ele_type[0] == 1.0:
+            #sf4-->vx
+            sf4 = structure.results[step]['element']['sf4'][k].values()
+            vx = statistics.mean(list(sf4)) # Bildet den durchschnitt aller Integrationspunkte des Elements
+            #sf5-->vy
+            sf5 = structure.results[step]['element']['sf5'][k].values()
+            vy = statistics.mean(list(sf5)) # Bildet den durchschnitt aller Integrationspunkte des Elements
+            
+            centroid= structure.element_centroid(element=k)   
+             #vx+vy-->v0
+            v0 = (vx**2+vy**2)**0.5
+            
+            angle=math.atan(vy/vx) # Vorzeichen zur Berechnung der Darstellung gegenuber dem Usermat umkehren 
+            
+            loc_x_glob_GP=[loc_x_glob_x[k], loc_x_glob_y[k], loc_x_glob_z[k]]
+            loc_y_glob_GP=[loc_y_glob_x[k], loc_y_glob_y[k], loc_y_glob_z[k]]
+
+            
+
+            # step 1: Bestimmung der Vektoren aus den Stahlspannungen in globaler x-Richtung (Annahme: fikti alle Stahlspannung zeigen in x-Richtung)
+            x_fiktiv=v0*scale
+            y_fikiv=0      
+            v_plus_fiktiv = Vector(x_fiktiv*0.5, y_fikiv*0.5,0.) 
+            v_minus_fiktiv = Vector(-x_fiktiv*0.5, -y_fikiv*0.5,0.)                                                            
+               
+            # step 2: Transformation der globlane x-Richtung (world XY) in lokale Ebene (lokales Koordinantesystem)
+            Frame_1 = Frame(centroid, loc_x_glob_GP, loc_y_glob_GP)  # Richtung lok koordinatensystem                
+            T = Transformation.from_frame(Frame_1)                                  
+            v_plus_fiktiv_trans=v_plus_fiktiv.transformed(T) # transformation from world XY to frame=lokales Koord.
+            v_minus_fiktiv_trans=v_minus_fiktiv.transformed(T)  # transformation from world XY to frame=lokales Koord.
+                
+            # step 3: Normalvektor (lokale z-Achse in globlaen Koordianten) aus Kruezprodukt der lokalen x,y Achsen in globalen Koordianten bestimmen
+            vector_cross=cross_vectors(loc_x_glob_GP,loc_y_glob_GP)
+            vector_cross_normal=normalize_vector(vector_cross)
+
+            # step 4: Rotation der nun transformieren Vektoren um den Bewehrungswinkle (angle) um die lokale z-Achse
+            T = matrix_from_axis_and_angle(vector_cross_normal, angle) 
+            v_plus_fiktiv_trans_rot=v_plus_fiktiv_trans.transformed(T) 
+            v_minus_fiktiv_trans_rot=v_minus_fiktiv_trans.transformed(T) 
+            
+
+            # step 5: Ploten in Rhino (only if sig_sr_GP>0.01)
+            id = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
+            col=[0,0,0]
+            rs.ObjectColor(id, col)  
+            #rs.ObjectPrintWidth(id1, sig_sr_GP*0.01) # Dicke der Linie definieren (use _PrintDisplay in Rhino)                  
+            if numeric == 'yes':                        
+                id1_text=rs.AddTextDot(str(round(v0,1)), centroid)
+                rs.ObjectColor(id1_text, col) 
+            #else:
+            #    pass
+
+
+    #structure.results[step]['element_info'][key] 
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #elements = [structure.elements[i].nodes for i in sorted(structure.elements, key=int)]
+    #print(elements) 
+    #mode=''
+
+
+    # Einlesen der Daten
+    # --------------------------------------------------------------------------    
+    #data = structure.results[step]['element'][field]
+    #print(data)
+
+    #nkeys = sorted(structure.elements, key=int)
+    #print(nkeys)
+    #ux = [nodal_data['ux{0}'.format(mode)][i] for i in nkeys]
+    
+
+    # Node and element data
+
+    #nodes = structure.nodes_xyz()
+    #elements = [structure.elements[i].nodes for i in sorted(structure.elements, key=int)]
+    
+    #nodal_data = structure.results[step]['nodal']
+    
+
+    
+    #uy = [nodal_data['uy{0}'.format(mode)][i] for i in nkeys]
+    #uz = [nodal_data['uz{0}'.format(mode)][i] for i in nkeys]
 
 
 def plot_voxels(structure, step, field='smises', cbar=[None, None], iptype='mean', nodal='mean', vdx=None, mode=''):

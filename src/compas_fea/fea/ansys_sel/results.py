@@ -173,12 +173,12 @@ class Results(object):
                     # Save element infos in vector elem_infos
                     self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=1, mpc and other =0'.format(ele_num_adj,stype_number))   # Elementype     
                     self.write_line('elem_infos({0},2)={1} ! Elementnumber'.format(ele_num_adj,ele_num_adj))   # Elementnumber 
-                    self.write_line('elem_infos({0},3)={1}! loccal x-axis direction global x'.format(ele_num_adj,e_x[0]))     
-                    self.write_line('elem_infos({0},4)={1}! loccal x-axis direction global y'.format(ele_num_adj,e_x[1]))      
+                    self.write_line('elem_infos({0},3)={1}! local x-axis direction global x'.format(ele_num_adj,e_x[0]))     
+                    self.write_line('elem_infos({0},4)={1}! local x-axis direction global y'.format(ele_num_adj,e_x[1]))      
                     self.write_line('elem_infos({0},5)={1}! loccal x-axis direction global z'.format(ele_num_adj,e_x[2]))    
-                    self.write_line('elem_infos({0},6)={1}! loccal y-axis direction global x'.format(ele_num_adj,e_y[0]))      
-                    self.write_line('elem_infos({0},7)={1}! loccal y-axis direction global y'.format(ele_num_adj,e_y[1])) 
-                    self.write_line('elem_infos({0},8)={1}! loccal y-axis direction global z'.format(ele_num_adj,e_y[2]))  
+                    self.write_line('elem_infos({0},6)={1}! local y-axis direction global x'.format(ele_num_adj,e_y[0]))      
+                    self.write_line('elem_infos({0},7)={1}! local y-axis direction global y'.format(ele_num_adj,e_y[1])) 
+                    self.write_line('elem_infos({0},8)={1}! local y-axis direction global z'.format(ele_num_adj,e_y[2]))  
                     self.write_line('elem_infos({0},9)={1}! psi1'.format(ele_num_adj,psi_1))  
                     self.write_line('elem_infos({0},10)={1}! psi2'.format(ele_num_adj,psi_2)) 
                     self.write_line('elem_infos({0},11)={1}! psi3'.format(ele_num_adj,psi_3)) 
