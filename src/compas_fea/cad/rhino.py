@@ -1154,7 +1154,7 @@ def plot_data(structure, lstep, field='um', layer=None, scale=1.0, radius=0.05, 
 
 
 
-def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
+def plot_principal_stresses(structure, step, shell_layer, cbar_size=1, scale=10, layer=None, numeric='no', values='all'):
     """
     Plots the principal stresses of the elements.
 
@@ -1184,6 +1184,7 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     """
     # Einlesen der Daten
     data = structure.results[step]['GP'] 
+    
 
     # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
     
@@ -1208,6 +1209,9 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     loc_y_glob_y=data['loc_y_glob_y'] 
     loc_y_glob_z=data['loc_y_glob_z']  
     elem_typ=data['elem_typ']   
+    k_riss=data['k_riss']  
+    fcc=data['fcc']
+
 
 
 
@@ -1219,14 +1223,9 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
     x_1_loc=[]
     y_1_loc=[]
 
-    # Layer in Rhino erzeugen
-    if not layer:
-            layer = '{0}_principal_stresses_{1}_layer'.format(step, shell_layer)
-    rs.CurrentLayer(rs.AddLayer(layer))
-    rs.DeleteObjects(rs.ObjectsByLayer(layer))
-    rs.EnableRedraw(False)
 
-    # Berechnung der sHauptspannungen und dessen Richtungen (in lokalen Koordinaten)
+
+    # Berechnung der Hauptspannungen und dessen Richtungen (in lokalen Koordinaten)
     # --------------------------------------------------------------------------
 
     ew_top, ev_top, ew_bot, ev_bot, length_stress=functions.principal_stresses(data,kind='sigma')   # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
@@ -1244,127 +1243,264 @@ def plot_principal_stresses(structure, step, shell_layer, scale, layer=None):
         
     # Ploten der Hauptspannung 3
     # --------------------------------------------------------------------------
-    for b in range(length_stress): 
-        
-        
-              
-        elem_typ_GP=elem_typ[b]
-        
-
-        if elem_typ_GP == 1: # 1=shell 0=MPR or others
-            coor_intp_layer_x_GP=coor_intp_layer_x[b]
-            coor_intp_layer_y_GP=coor_intp_layer_y[b]
-            coor_intp_layer_z_GP=coor_intp_layer_z[b]
-            loc_x_glob_x_GP=loc_x_glob_x[b]
-            loc_x_glob_y_GP=loc_x_glob_y[b]
-            loc_x_glob_z_GP=loc_x_glob_z[b]
-            loc_y_glob_x_GP=loc_y_glob_x[b]      
-            loc_y_glob_y_GP=loc_y_glob_y[b] 
-            loc_y_glob_z_GP=loc_y_glob_z[b]          
-
-            f_cc_eff_GP=fcc_eff[b]           
-
-            # Bestimmung aktuellen Hauptspannung 3
-            # TODO: axes anpassen; anpassung fur hauptspannung
-  
+    if values=='all' or values=='3':
+            
+        # Layer in Rhino erzeugen
+        if not layer:
+                layer = '{0}_principal_stresses_{1}_layer_direction_3'.format(step, shell_layer)
+        rs.CurrentLayer(rs.AddLayer(layer))
+        rs.DeleteObjects(rs.ObjectsByLayer(layer))
+        rs.EnableRedraw(False)
 
 
-            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
-            T = Transformation.from_frame(f2)  
-            ev_GP=ev[b]
-            ew_GP=ew[b]       
-            
-            sig_c3_GP=min(ew_GP)
-            index_c3_GP=ew_GP.index(sig_c3_GP)     
-            
-            # Vectors local coor
-            x_3_loc=ev_GP[0][index_c3_GP]*sig_c3_GP*scale
-            y_3_loc=ev_GP[1][index_c3_GP]*sig_c3_GP*scale
-            v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
-            v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
-            
-            
-            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
-            
-            if sig_c3_GP <= -1*f_cc_eff_GP: # Druck und kleiner als fcc_eff 
-                id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
-                col3=[0,0,0]
-                rs.ObjectColor(id3, col3)
-            elif sig_c3_GP > -1*f_cc_eff_GP and sig_c3_GP <-0.001: # Druck aber grosser fcc_eff und kleiner 0            
-                id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
-                col3=[0,0,255]
-                rs.ObjectColor(id3, col3)
-            elif sig_c3_GP > 0: # Zug
-                # nicht plot
+        # Plot Colorbar
+        # --------------------------------------------------------------------------
+        cbar_size=1
+
+        xr, yr, _ = structure.node_bounds()
+        yran = yr[1] - yr[0] if yr[1] - yr[0] else 1
+        s = yran * 0.1 * cbar_size
+        xmin = xr[1] + 3 * s
+        ymin = yr[0]
+
+        xl = [xmin, xmin + s]
+        yl = [ymin + i * s for i in range(11)]
+        h = 0.006 * s
+
+        for i in range(3):
+            x0 = xmin + 1.2 * s
+            yl = ymin + (3.8 - i) * s
+            if i==0:
+                id=rs.AddText('0 < s', [x0, yl, 0], height=h)            
+                col=[255,0,0]
+                rs.ObjectColor(id, col)
+            elif i==1:
+                id=rs.AddText('0 > s > f_ceff', [x0, yl, 0], height=h)
+                col=[0,0,255]
+                rs.ObjectColor(id, col)
+            elif i==2:
+                id=rs.AddText('fceff < s', [x0, yl, 0], height=h)            
+                col=[0,0,0]
+                rs.ObjectColor(id, col)        
+
+        for b in range(length_stress): 
+                
+            elem_typ_GP=elem_typ[b]
+
+            if elem_typ_GP == 1: # 1=shell 0=MPR or others
+                coor_intp_layer_x_GP=coor_intp_layer_x[b]
+                coor_intp_layer_y_GP=coor_intp_layer_y[b]
+                coor_intp_layer_z_GP=coor_intp_layer_z[b]
+                loc_x_glob_x_GP=loc_x_glob_x[b]
+                loc_x_glob_y_GP=loc_x_glob_y[b]
+                loc_x_glob_z_GP=loc_x_glob_z[b]
+                loc_y_glob_x_GP=loc_y_glob_x[b]      
+                loc_y_glob_y_GP=loc_y_glob_y[b] 
+                loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+                f_cc_eff_GP=fcc_eff[b]    
+                fcc_GP=fcc[b]
+                # Bestimmung aktuellen Hauptspannung 3
+                # TODO: axes anpassen; anpassung fur hauptspannung
+    
+
+
+                f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+                T = Transformation.from_frame(f2)  
+                ev_GP=ev[b]
+                ew_GP=ew[b]       
+                
+                sig_c3_GP=min(ew_GP)
+                index_c3_GP=ew_GP.index(sig_c3_GP)     
+                
+                # Vectors local coor
+                x_3_loc=ev_GP[0][index_c3_GP]*sig_c3_GP*scale
+                y_3_loc=ev_GP[1][index_c3_GP]*sig_c3_GP*scale
+                v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
+                v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
+                
+                # Calculation mechanical values
+                fct=k_riss[b]*0.3*fcc[b]**(2/3)
+                
+                centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
+                
+                # Plot lines (only if abs(sig_c3_GP) > 0.01)
+                if sig_c3_GP >= 0.01 and sig_c3_GP <= fct: # Zug ungerissen 
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[255,0,0] # rot
+                    rs.ObjectColor(id3, col3)
+                    if numeric == 'yes':                               
+                        id3_text=rs.AddTextDot(str(round(sig_c3_GP,1))+' '+'('+str(round(fct/sig_c3_GP,1))+')', centroid)
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass     
+                elif sig_c3_GP > fct: # Zug gerissen
+                    #id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    #col3=[255,120,0] # Orange
+                    #rs.ObjectColor(id3, col3)
+                    #if numeric == 'yes':                               
+                    #    id3_text=rs.AddTextDot(str(round(sig_c3_GP,1))+' '+'('+str(round(fct/sig_c3_GP,1))+')', centroid)
+                    #    rs.ObjectColor(id3_text, col3) 
+                    #else:
+                    #    pass 
+                    pass # due to a brittle stress-strain relationshipt under tension -> sig_c1_GP=0 and therefore v_minus and v_plus are zero (not plotable)
+                elif sig_c3_GP < -0.01 and sig_c3_GP > -1*f_cc_eff_GP: # kein Bruch                                       
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[0,0,255]
+                    rs.ObjectColor(id3, col3)
+                    if numeric == 'yes':                               
+                        id3_text=rs.AddTextDot(str(round(sig_c3_GP,1))+' '+'('+str(round(-1*f_cc_eff_GP/sig_c3_GP,1))+')', centroid)                        
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass                          
+                elif sig_c3_GP <= -1*f_cc_eff_GP: # Bruch                    
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[0,0,0]
+                    rs.ObjectColor(id3, col3)
+                    if numeric == 'yes':                        
+                        id3_text=rs.AddTextDot(str(round(sig_c3_GP,1))+' '+'('+str(round(-1*f_cc_eff_GP/sig_c3_GP,1))+')', centroid)
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass  
+                else: 
+                    pass
+                
+                    # Folnder Command in Rhion ausfuhren falls liniendicke nicht angezeigt wird _PrintDisplay _State=_Toggle _Enter
+            else:
                 pass
-            
-                #rs.ObjectPrintWidthSource(id3,0.5)
-                #rs.ObjectPrintWidth(id3,10)
-            
-                # Folnder Command in Rhion ausfuhren falls liniendicke nicht angezeigt wird _PrintDisplay _State=_Toggle _Enter
-        else:
-            pass
     
     
     # Ploten der Hauptspannung 1
     # --------------------------------------------------------------------------
-    for b in range(length_stress): 
-        
-        elem_typ_GP=elem_typ[b]
-
-        if elem_typ_GP == 1: # 1=shell 0=MPR or others
-            coor_intp_layer_x_GP=coor_intp_layer_x[b]
-            coor_intp_layer_y_GP=coor_intp_layer_y[b]
-            coor_intp_layer_z_GP=coor_intp_layer_z[b]
-            loc_x_glob_x_GP=loc_x_glob_x[b]
-            loc_x_glob_y_GP=loc_x_glob_y[b]
-            loc_x_glob_z_GP=loc_x_glob_z[b]
-            loc_y_glob_x_GP=loc_y_glob_x[b]      
-            loc_y_glob_y_GP=loc_y_glob_y[b] 
-            loc_y_glob_z_GP=loc_y_glob_z[b]          
-
-            f_cc_eff_GP=fcc_eff[b]           
-
-            # Bestimmung aktuellen Hauptspannung 1
-            # TODO: axes anpassen; anpassung fur hauptspannung
-
-            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
-            T = Transformation.from_frame(f2)  
-            ev_GP=ev[b]
-            ew_GP=ew[b]       
-
-            sig_c1_GP=max(ew_GP)
-            index_c1_GP=ew_GP.index(sig_c1_GP)     
+    if values=='all' or values=='1':
             
-            # Vectors local coor
-            x_1_loc=ev_GP[0][index_c1_GP]*sig_c1_GP*scale
-            y_1_loc=ev_GP[1][index_c1_GP]*sig_c1_GP*scale
-            v_plus = Vector(x_1_loc*0.5, y_1_loc*0.5,0.).transformed(T)
-            v_minus = Vector(-x_1_loc*0.5, -y_1_loc*0.5,0.).transformed(T)
+        # Layer in Rhino erzeugen
+        if not layer:
+                layer = '{0}_principal_stresses_{1}_layer_direction_1'.format(step, shell_layer)
+        rs.CurrentLayer(rs.AddLayer(layer))
+        rs.DeleteObjects(rs.ObjectsByLayer(layer))
+        rs.EnableRedraw(False)
+
+
+
+        # Plot Colorbar
+        # --------------------------------------------------------------------------
+        cbar_size=1
+
+        xr, yr, _ = structure.node_bounds()
+        yran = yr[1] - yr[0] if yr[1] - yr[0] else 1
+        s = yran * 0.1 * cbar_size
+        xmin = xr[1] + 3 * s
+        ymin = yr[0]
+
+        xl = [xmin, xmin + s]
+        yl = [ymin + i * s for i in range(11)]
+        h = 0.006 * s
+
+        for i in range(3):
+            x0 = xmin + 1.2 * s
+            yl = ymin + (3.8 - i) * s
+            if i==0:
+                id=rs.AddText('0 < s', [x0, yl, 0], height=h)            
+                col=[255,0,0]
+                rs.ObjectColor(id, col)
+            elif i==1:
+                id=rs.AddText('0 > s > f_ceff', [x0, yl, 0], height=h)
+                col=[0,0,255]
+                rs.ObjectColor(id, col)
+            elif i==2:
+                id=rs.AddText('fceff < s', [x0, yl, 0], height=h)            
+                col=[0,0,0]
+                rs.ObjectColor(id, col)        
+                        
+        for b in range(length_stress): 
             
-            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]              
+            elem_typ_GP=elem_typ[b]
+
+            if elem_typ_GP == 1: # 1=shell 0=MPR or others
+                coor_intp_layer_x_GP=coor_intp_layer_x[b]
+                coor_intp_layer_y_GP=coor_intp_layer_y[b]
+                coor_intp_layer_z_GP=coor_intp_layer_z[b]
+                loc_x_glob_x_GP=loc_x_glob_x[b]
+                loc_x_glob_y_GP=loc_x_glob_y[b]
+                loc_x_glob_z_GP=loc_x_glob_z[b]
+                loc_y_glob_x_GP=loc_y_glob_x[b]      
+                loc_y_glob_y_GP=loc_y_glob_y[b] 
+                loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+                f_cc_eff_GP=fcc_eff[b]           
+
+                # Bestimmung aktuellen Hauptspannung 1
+                # TODO: axes anpassen; anpassung fur hauptspannung
+
+                f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+                T = Transformation.from_frame(f2)  
+                ev_GP=ev[b]
+                ew_GP=ew[b]       
+
+                sig_c1_GP=max(ew_GP)
+                index_c1_GP=ew_GP.index(sig_c1_GP)     
+                
+                # Vectors local coor
+                x_1_loc=ev_GP[0][index_c1_GP]*sig_c1_GP*scale
+                y_1_loc=ev_GP[1][index_c1_GP]*sig_c1_GP*scale
+                v_plus = Vector(x_1_loc*0.5, y_1_loc*0.5,0.).transformed(T)
+                v_minus = Vector(-x_1_loc*0.5, -y_1_loc*0.5,0.).transformed(T)
+                
+                # Calculation mechanical values
+                fct=k_riss[b]*0.3*fcc[b]**(2/3)
+                
+                centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
+                
+                # Plot lines (only if abs(sig_c1_GP) > 0.01)
+                if sig_c1_GP >= 0.01 and sig_c1_GP <= fct: # Zug ungerissen                    
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[255,0,0] # rot
+                    rs.ObjectColor(id1, col1)
+                    if numeric == 'yes':                               
+                        id1_text=rs.AddTextDot(str(round(sig_c1_GP,1))+' '+'('+str(round(fct/sig_c1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass     
+                elif sig_c1_GP > fct: # Zug gerissen
+                    #id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    #col1=[255,120,0] # Orange
+                    #rs.ObjectColor(id1, col1)
+                    #if numeric == 'yes':                               
+                    #    id1_text=rs.AddTextDot(str(round(sig_c1_GP,1))+' '+'('+str(round(fct/sig_c1_GP,1))+')', centroid)
+                    #    rs.ObjectColor(id1_text, col1) 
+                    #else:
+                        #pass 
+                    pass # due to a brittle stress-strain relationshipt under tension -> sig_c1_GP=0 and therefore v_minus and v_plus are zero (not plotable)
+                elif sig_c1_GP < -0.01 and sig_c1_GP > -1*f_cc_eff_GP: # kein Bruch                                                      
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[0,0,255]
+                    rs.ObjectColor(id1, col1)
+                    if numeric == 'yes':                               
+                        id1_text=rs.AddTextDot(str(round(sig_c1_GP,1))+' '+'('+str(round(-1*f_cc_eff_GP/sig_c1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass                          
+                elif sig_c1_GP <= -1*f_cc_eff_GP: # Bruch                    
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[0,0,0]
+                    rs.ObjectColor(id1, col1)
+                    if numeric == 'yes':                        
+                        id1_text=rs.AddTextDot(str(round(sig_c1_GP,1))+' '+'('+str(round(-1*f_cc_eff_GP/sig_c1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass   
+                else:
+                    pass
+
             
-            if sig_c1_GP <= -1*f_cc_eff_GP: # Druck und kleiner als fcc_eff 
-                id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
-                col1=[0,0,0]
-                rs.ObjectColor(id1, col1)
-            elif sig_c1_GP > -1*f_cc_eff_GP and sig_c1_GP <-0.001: # Druck aber grosser fcc_eff und kleiner 0            
-                id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))
-                col1=[0,0,255]
-                rs.ObjectColor(id1, col1)
-            elif sig_c1_GP > 0: # Zug
-                # Bei Zug nicht Ploten
+                
+                    # Folnder Command in Rhion ausfuhren falls liniendicke nicht angezeigt wird _PrintDisplay _State=_Toggle _Enter
+            else:
                 pass
-            
-                #rs.ObjectPrintWidthSource(id3,0.5)
-                #rs.ObjectPrintWidth(id3,10)
-            
-                # Folnder Command in Rhion ausfuhren falls liniendicke nicht angezeigt wird _PrintDisplay _State=_Toggle _Enter
-        else:
-            pass
-   
+    
 
-def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
+def plot_principal_strains(structure, step, shell_layer, cbar_size=1, scale=1000, layer=None, numeric='no', values='all'):
     """
     Plots the principal strains of the elements.
 
@@ -1419,9 +1555,12 @@ def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
     loc_y_glob_y=data['loc_y_glob_y'] 
     loc_y_glob_z=data['loc_y_glob_z']  
     elem_typ=data['elem_typ']   
+    ecu=data['ecu']   
+    k_E=data['k_E']   
+    k_riss=data['k_riss']  
+    fcc=data['fcc']
 
-
-
+  
 
     # Aufbau Layer
     # --------------------------------------------------------------------------
@@ -1429,13 +1568,6 @@ def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
     y_3_loc=[]
     x_1_loc=[]
     y_1_loc=[]
-
-    # Layer in Rhino erzeugen
-    if not layer:
-            layer = '{0}_principal_strains_{1}_layer'.format(step, shell_layer)
-    rs.CurrentLayer(rs.AddLayer(layer))
-    rs.DeleteObjects(rs.ObjectsByLayer(layer))
-    rs.EnableRedraw(False)
 
     # Berechnung der Hauptverzerrungen und dessen Richtungen (in lokalen Koordinaten)
     # --------------------------------------------------------------------------
@@ -1455,120 +1587,263 @@ def plot_principal_strains(structure, step, shell_layer, scale, layer=None):
         
     # Ploten der Hauptverzerrung 3
     # --------------------------------------------------------------------------
-    for b in range(length_): 
-        
-        
-              
-        elem_typ_GP=elem_typ[b]
-        
+    if values=='all' or values=='3':
+            
+        # Layer in Rhino erzeugen
+        if not layer:
+                layer = '{0}_principal_strains_{1}_layer_direction_3'.format(step, shell_layer)
+        rs.CurrentLayer(rs.AddLayer(layer))
+        rs.DeleteObjects(rs.ObjectsByLayer(layer))
+        rs.EnableRedraw(False)
 
-        if elem_typ_GP == 1: # 1=shell 0=MPR or others
-            coor_intp_layer_x_GP=coor_intp_layer_x[b]
-            coor_intp_layer_y_GP=coor_intp_layer_y[b]
-            coor_intp_layer_z_GP=coor_intp_layer_z[b]
-            loc_x_glob_x_GP=loc_x_glob_x[b]
-            loc_x_glob_y_GP=loc_x_glob_y[b]
-            loc_x_glob_z_GP=loc_x_glob_z[b]
-            loc_y_glob_x_GP=loc_y_glob_x[b]      
-            loc_y_glob_y_GP=loc_y_glob_y[b] 
-            loc_y_glob_z_GP=loc_y_glob_z[b]          
 
-            eps_bruch_GP=eps_bruch[b]           
+        # Plot Colorbar
+        # --------------------------------------------------------------------------
+        xr, yr, _ = structure.node_bounds()
+        yran = yr[1] - yr[0] if yr[1] - yr[0] else 1
+        s = yran * 0.1 * cbar_size
+        xmin = xr[1] + 3 * s
+        ymin = yr[0]
 
-            # Bestimmung aktuellen Hauptverzerrung 3
+        xl = [xmin, xmin + s]
+        yl = [ymin + i * s for i in range(11)]
+        h = 0.006 * s
 
-            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
-            T = Transformation.from_frame(f2)  
-            ev_GP=ev[b]
-            ew_GP=ew[b]       
+        for i in range(4):
+            x0 = xmin + 1.2 * s
+            yl = ymin + (3.8 - i) * s
+            if i==0:
+                id=rs.AddText('0 < eps < etu', [x0, yl, 0], height=h)            
+                col=[255,0,0]
+                rs.ObjectColor(id, col)
+            elif i==1:
+                id=rs.AddText('eps > etu', [x0, yl, 0], height=h)
+                col=[255,120,0]
+                rs.ObjectColor(id, col)
+            elif i==2:            
+                id=rs.AddText('0 > eps > ecu', [x0, yl, 0], height=h)            
+                col=[0,0,255]
+                rs.ObjectColor(id, col)
+            elif i==3:            
+                id=rs.AddText('ecu > eps', [x0, yl, 0], height=h)            
+                col=[0,0,0]
+                rs.ObjectColor(id, col)
+
+
+
+        for b in range(length_): 
+                       
+                
+            elem_typ_GP=elem_typ[b]
             
-            eps_3_GP=min(ew_GP)
-            index_3_GP=ew_GP.index(eps_3_GP)     
-            
-            # Vectors local coor
-            x_3_loc=ev_GP[0][index_3_GP]*eps_3_GP*scale
-            y_3_loc=ev_GP[1][index_3_GP]*eps_3_GP*scale
-            v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
-            v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
-            
-            
-            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
-            
-            if eps_3_GP >= 0:
-               id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
-               col3=[255,0,0]
-               rs.ObjectColor(id3, col3)
-               
-            elif eps_3_GP < 0:
-                if eps_bruch_GP < 1: # kein Bruch
+
+            if elem_typ_GP == 1: # 1=shell 0=MPR or others
+                coor_intp_layer_x_GP=coor_intp_layer_x[b]
+                coor_intp_layer_y_GP=coor_intp_layer_y[b]
+                coor_intp_layer_z_GP=coor_intp_layer_z[b]
+                loc_x_glob_x_GP=loc_x_glob_x[b]
+                loc_x_glob_y_GP=loc_x_glob_y[b]
+                loc_x_glob_z_GP=loc_x_glob_z[b]
+                loc_y_glob_x_GP=loc_y_glob_x[b]      
+                loc_y_glob_y_GP=loc_y_glob_y[b] 
+                loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+                eps_bruch_GP=eps_bruch[b]           
+
+                # Bestimmung aktuellen Hauptverzerrung 3
+
+                f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+                T = Transformation.from_frame(f2)  
+                ev_GP=ev[b]
+                ew_GP=ew[b]       
+                
+                eps_3_GP=min(ew_GP)
+                index_3_GP=ew_GP.index(eps_3_GP)     
+                
+                # Vectors local coor
+                x_3_loc=ev_GP[0][index_3_GP]*eps_3_GP*scale
+                y_3_loc=ev_GP[1][index_3_GP]*eps_3_GP*scale
+                v_plus = Vector(x_3_loc*0.5, y_3_loc*0.5,0.).transformed(T)
+                v_minus = Vector(-x_3_loc*0.5, -y_3_loc*0.5,0.).transformed(T)
+                
+                # Calculation mechanical values
+                E_c=k_E[b]*fcc[b]**(1/3)                
+                fct=k_riss[b]*0.3*fcc[b]**(2/3)
+                eps_ctu=fct/E_c
+                centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
+                
+
+                # Plot lines (only if abs(eps_3_GP) > 0.000000001)
+                if eps_3_GP >= 0.000000001 and eps_3_GP <= eps_ctu: # Zug ungerissen
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[255,0,0] # rot
+                    rs.ObjectColor(id3, col3)
+                    if numeric == 'yes':                               
+                        id3_text=rs.AddTextDot(str(round(eps_3_GP*1000,1))+' '+'('+str(round(eps_ctu/eps_3_GP,1))+')', centroid)
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass     
+                elif eps_3_GP > eps_ctu: # Zug gerissen
+                    id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col3=[255,120,0] # Orange
+                    rs.ObjectColor(id3, col3)
+                    if numeric == 'yes':                               
+                        id3_text=rs.AddTextDot(str(round(eps_3_GP*1000,1))+' '+'('+str(round(eps_ctu/eps_3_GP,1))+')', centroid)
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass 
+                elif eps_3_GP < -0.000000001 and eps_3_GP > ecu[b]: # kein Bruch                                       
                     id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
                     col3=[0,0,255]
                     rs.ObjectColor(id3, col3)
-                elif eps_bruch_GP >= 1: # Bruch          
+                    if numeric == 'yes':                               
+                        id3_text=rs.AddTextDot(str(round(eps_3_GP*1000,1))+' '+'('+str(round(ecu[b]/eps_3_GP,1))+')', centroid)
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass                          
+                elif eps_3_GP <= ecu[b]: # Bruch                    
                     id3 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
                     col3=[0,0,0]
                     rs.ObjectColor(id3, col3)
-        else:
-            pass
-    
-    
+                    if numeric == 'yes':                        
+                        id3_text=rs.AddTextDot(str(round(eps_3_GP*1000,1))+' '+'('+str(round(ecu[b]/eps_3_GP,1))+')', centroid)
+                        rs.ObjectColor(id3_text, col3) 
+                    else:
+                        pass   
+                else:
+                    pass                      
+            else:
+                pass
+                
+
     # Ploten der Hauptverzerrung 1
     # --------------------------------------------------------------------------
-    for b in range(length_): 
-        
-        elem_typ_GP=elem_typ[b]
+    if values=='all' or values=='1':
 
-        if elem_typ_GP == 1: # 1=shell 0=MPR or others
-            coor_intp_layer_x_GP=coor_intp_layer_x[b]
-            coor_intp_layer_y_GP=coor_intp_layer_y[b]
-            coor_intp_layer_z_GP=coor_intp_layer_z[b]
-            loc_x_glob_x_GP=loc_x_glob_x[b]
-            loc_x_glob_y_GP=loc_x_glob_y[b]
-            loc_x_glob_z_GP=loc_x_glob_z[b]
-            loc_y_glob_x_GP=loc_y_glob_x[b]      
-            loc_y_glob_y_GP=loc_y_glob_y[b] 
-            loc_y_glob_z_GP=loc_y_glob_z[b]          
+        # Layer in Rhino erzeugen
+        if not layer:
+                layer = '{0}_principal_strains_{1}_layer_direction_1'.format(step, shell_layer)
+        rs.CurrentLayer(rs.AddLayer(layer))
+        rs.DeleteObjects(rs.ObjectsByLayer(layer))
+        rs.EnableRedraw(False)
 
-            eps_bruch_GP=eps_bruch[b]             
+    
+        # Plot Colorbar
+        # --------------------------------------------------------------------------
+        xr, yr, _ = structure.node_bounds()
+        yran = yr[1] - yr[0] if yr[1] - yr[0] else 1
+        s = yran * 0.1 * cbar_size
+        xmin = xr[1] + 3 * s
+        ymin = yr[0]
 
-            # Bestimmung aktuellen Hauptverzerrung 1
+        xl = [xmin, xmin + s]
+        yl = [ymin + i * s for i in range(11)]
+        h = 0.006 * s
 
-            f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
-            T = Transformation.from_frame(f2)  
-            ev_GP=ev[b]
-            ew_GP=ew[b]       
+        for i in range(4):
+            x0 = xmin + 1.2 * s
+            yl = ymin + (3.8 - i) * s
+            if i==0:
+                id=rs.AddText('0 < eps < etu', [x0, yl, 0], height=h)            
+                col=[255,0,0]
+                rs.ObjectColor(id, col)
+            elif i==1:
+                id=rs.AddText('eps > etu', [x0, yl, 0], height=h)
+                col=[255,120,0]
+                rs.ObjectColor(id, col)
+            elif i==2:            
+                id=rs.AddText('0 > eps > ecu', [x0, yl, 0], height=h)            
+                col=[0,0,255]
+                rs.ObjectColor(id, col)
+            elif i==3:            
+                id=rs.AddText('ecu > eps', [x0, yl, 0], height=h)            
+                col=[0,0,0]
+                rs.ObjectColor(id, col)        
 
-            eps_1_GP=max(ew_GP)
-            index_1_GP=ew_GP.index(eps_1_GP)     
+        for b in range(length_): 
             
-            # Vectors local coor
-            x_1_loc=ev_GP[0][index_1_GP]*eps_1_GP*scale
-            y_1_loc=ev_GP[1][index_1_GP]*eps_1_GP*scale
-            v_plus = Vector(x_1_loc*0.5, y_1_loc*0.5,0.).transformed(T)
-            v_minus = Vector(-x_1_loc*0.5, -y_1_loc*0.5,0.).transformed(T)
-            
-            centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]              
-            
-            if eps_1_GP >= 0:
-                id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
-                col1=[255,0,0]
-                rs.ObjectColor(id1, col1)
+            elem_typ_GP=elem_typ[b]
 
-            elif eps_1_GP < 0:
-                if eps_bruch_GP < 1: # kein Bruch
+            if elem_typ_GP == 1: # 1=shell 0=MPR or others
+                coor_intp_layer_x_GP=coor_intp_layer_x[b]
+                coor_intp_layer_y_GP=coor_intp_layer_y[b]
+                coor_intp_layer_z_GP=coor_intp_layer_z[b]
+                loc_x_glob_x_GP=loc_x_glob_x[b]
+                loc_x_glob_y_GP=loc_x_glob_y[b]
+                loc_x_glob_z_GP=loc_x_glob_z[b]
+                loc_y_glob_x_GP=loc_y_glob_x[b]      
+                loc_y_glob_y_GP=loc_y_glob_y[b] 
+                loc_y_glob_z_GP=loc_y_glob_z[b]          
+
+                eps_bruch_GP=eps_bruch[b]             
+
+                # Bestimmung aktuellen Hauptverzerrung 1
+
+                f2 = Frame([coor_intp_layer_x_GP, coor_intp_layer_y_GP, coor_intp_layer_z_GP], [loc_x_glob_x_GP, loc_x_glob_y_GP, loc_x_glob_z_GP], [loc_y_glob_x_GP, loc_y_glob_y_GP, loc_y_glob_z_GP])    
+                T = Transformation.from_frame(f2)  
+                ev_GP=ev[b]
+                ew_GP=ew[b]       
+
+                eps_1_GP=max(ew_GP)
+                index_1_GP=ew_GP.index(eps_1_GP)     
+                
+                # Vectors local coor
+                x_1_loc=ev_GP[0][index_1_GP]*eps_1_GP*scale
+                y_1_loc=ev_GP[1][index_1_GP]*eps_1_GP*scale
+                v_plus = Vector(x_1_loc*0.5, y_1_loc*0.5,0.).transformed(T)
+                v_minus = Vector(-x_1_loc*0.5, -y_1_loc*0.5,0.).transformed(T)
+                
+                # Calculation mechanical values
+                E_c=k_E[b]*fcc[b]**(1/3)
+                fct=k_riss[b]*0.3*fcc[b]**(2/3)
+                eps_ctu=fct/E_c
+                centroid=[coor_intp_layer_x_GP,coor_intp_layer_y_GP,coor_intp_layer_z_GP]
+                
+                # Plot lines (only if abs(eps_3_GP) > 0.000000001)
+                if eps_1_GP >= 0.000000001 and eps_1_GP <= eps_ctu: # Zug ungerissen
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[255,0,0] # rot
+                    rs.ObjectColor(id1, col1)
+                    if numeric == 'yes':                               
+                        id1_text=rs.AddTextDot(str(round(eps_1_GP*1000,1))+' '+'('+str(round(eps_ctu/eps_1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass     
+                elif eps_1_GP > eps_ctu: # Zug gerissen
+                    id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
+                    col1=[255,120,0] # Orange
+                    rs.ObjectColor(id1, col1)
+                    if numeric == 'yes':                               
+                        id1_text=rs.AddTextDot(str(round(eps_1_GP*1000,1))+' '+'('+str(round(eps_ctu/eps_1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass 
+                elif eps_1_GP < -0.000000001 and eps_1_GP > ecu[b]: # kein Bruch                    
                     id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
                     col1=[0,0,255]
                     rs.ObjectColor(id1, col1)
-                elif eps_bruch_GP >= 1: # Bruch          
+                    if numeric == 'yes':                               
+                        id1_text=rs.AddTextDot(str(round(eps_1_GP*1000,1))+' '+'('+str(round(ecu[b]/eps_1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass                          
+                elif eps_1_GP <= ecu[b]: # Bruch
                     id1 = rs.AddLine(add_vectors(centroid, v_minus), add_vectors(centroid, v_plus))   
                     col1=[0,0,0]
                     rs.ObjectColor(id1, col1)
-        else:
-            pass
+                    if numeric == 'yes':                        
+                        id1_text=rs.AddTextDot(str(round(eps_1_GP*1000,1))+' '+'('+str(round(ecu[b]/eps_1_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass                         
+                else:
+                    pass
+            else:
+                pass
 
 
 
-def plot_steel_stresses(structure, step, Reinf_layer, scale=1, layer=None):
+def plot_steel_stresses(structure, step, Reinf_layer, cbar_size=1, scale=1, layer=None, numeric='no'):
     """
     Plots the steel stresses on GP
 
@@ -1647,6 +1922,7 @@ def plot_steel_stresses(structure, step, Reinf_layer, scale=1, layer=None):
     loc_y_glob_y=data['loc_y_glob_y'] 
     loc_y_glob_z=data['loc_y_glob_z']  
     elem_typ=data['elem_typ']   
+    max_sig_sr=max(sig_sr_layer)    
 
     # Aufbau Layer
     # --------------------------------------------------------------------------
@@ -1655,6 +1931,36 @@ def plot_steel_stresses(structure, step, Reinf_layer, scale=1, layer=None):
     rs.CurrentLayer(rs.AddLayer(layer))
     rs.DeleteObjects(rs.ObjectsByLayer(layer))
     rs.EnableRedraw(False)
+
+
+    # Plot Colorbar
+    # --------------------------------------------------------------------------
+    xr, yr, _ = structure.node_bounds()
+    yran = yr[1] - yr[0] if yr[1] - yr[0] else 1
+    s = yran * 0.1 * cbar_size
+    xmin = xr[1] + 3 * s
+    ymin = yr[0]
+
+    xl = [xmin, xmin + s]
+    yl = [ymin + i * s for i in range(11)]
+    h = 0.006 * s
+
+    for i in range(3):
+        x0 = xmin + 1.2 * s
+        yl = ymin + (3.8 - i) * s
+        if i==0:
+            id=rs.AddText('0 < s_sr < fsy', [x0, yl, 0], height=h)            
+            col=[0,0,0]
+            rs.ObjectColor(id, col)
+        elif i==1:
+            id=rs.AddText('fsy < s_sr < fsu', [x0, yl, 0], height=h)
+            col=[255,165,0]
+            rs.ObjectColor(id, col)
+        elif i==2:            
+            id=rs.AddText('fsu < s_sr', [x0, yl, 0], height=h)            
+            col=[255,0,0]
+            rs.ObjectColor(id, col) 
+
 
     # Ploten der Stahlspannungen
     # --------------------------------------------------------------------------
@@ -1706,23 +2012,41 @@ def plot_steel_stresses(structure, step, Reinf_layer, scale=1, layer=None):
                 v_plus_fiktiv_trans_rot=v_plus_fiktiv_trans.transformed(T) 
                 v_minus_fiktiv_trans_rot=v_minus_fiktiv_trans.transformed(T) 
 
-                # step 5: Ploten in Rhino
-
-                if sig_sr_GP <= fsy[b]:
+                # step 5: Ploten in Rhino (only if sig_sr_GP>0.01)
+                if sig_sr_GP <= fsy[b] and sig_sr_GP > 0.01 :
                     id1 = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
                     col1=[0,0,0]
-                    rs.ObjectColor(id1, col1)
+                    rs.ObjectColor(id1, col1)  
+                    #rs.ObjectPrintWidth(id1, sig_sr_GP*0.01) # Dicke der Linie definieren (use _PrintDisplay in Rhino)                  
+                    if numeric == 'yes':                        
+                        id1_text=rs.AddTextDot(str(round(sig_sr_GP,1))+' '+'('+str(round(fsu[b]/sig_sr_GP,1))+')', centroid)
+                        rs.ObjectColor(id1_text, col1) 
+                    else:
+                        pass
+
                     #rs.ObjectPrintWidth(id1, sig_sr_GP*scale_line_width) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
                 elif sig_sr_GP > fsy[b] and sig_sr_GP <= fsu[b]:
                     id1 = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
                     col1=[255,165,0]
                     rs.ObjectColor(id1, col1)
+                    #rs.ObjectPrintWidth(id1, sig_sr_GP*0.01) # Dicke der Linie definieren (use _PrintDisplay in Rhino) 
+                    if numeric == 'yes':
+                        id1_text=rs.AddTextDot(str(round(sig_sr_GP,1))+' '+'('+str(round(fsu[b]/sig_sr_GP,1))+')', centroid)                        
+                    else:
+                        pass              
                     #rs.ObjectPrintWidth(id1, sig_sr_GP*scale_line_width) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
                 elif sig_sr_GP > fsu[b]:
                     id1 = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
                     col1=[255,0,0]
                     rs.ObjectColor(id1, col1)
+                    #rs.ObjectPrintWidth(id1, sig_sr_GP*0.01) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
+                    if numeric == 'yes':
+                        id1_text=rs.AddTextDot(str(round(sig_sr_GP,1))+' '+'('+str(round(fsu[b]/sig_sr_GP,1))+')', centroid)                        
+                    else:
+                        pass                   
                     #rs.ObjectPrintWidth(id1, sig_sr_GP*scale_line_width) # Dicke der Linie definieren (use _PrintDisplay in Rhino)
+                else:
+                    pass
 
         else:
             pass

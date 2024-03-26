@@ -384,7 +384,7 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                             ps = psfile.readlines()
                                         
                             
-                            stress_dict = {'nr': {},'loc_x_glob_x': {}, 'loc_x_glob_y': {}, 'loc_x_glob_z': {}, 'loc_y_glob_x': {} , 'loc_y_glob_y': {} , 'loc_y_glob_z': {} , 'elem_typ': {} } # sig_c1 and sig_c3  top an einem GP
+                            stress_dict = {'nr': {},'loc_x_glob_x': {}, 'loc_x_glob_y': {}, 'loc_x_glob_z': {}, 'loc_y_glob_x': {} , 'loc_y_glob_y': {} , 'loc_y_glob_z': {} , 'elem_typ': {} , 'fcc': {}, 'k_riss': {}  } # sig_c1 and sig_c3  top an einem GP
                             for i in range(len(ps)):
                                 psstring = ps[i].split(',')
                                 stress = map(float, psstring)
@@ -397,6 +397,8 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 stress_dict['loc_y_glob_y'][key] = float(stress[5])
                                 stress_dict['loc_y_glob_z'][key] = float(stress[6])
                                 stress_dict['elem_typ'][key] = float(stress[7])
+                                stress_dict['fcc'][key] = float(stress[8])
+                                stress_dict['k_riss'][key] = float(stress[9])
                             
                             gplist.append(stress_dict)  
                         
@@ -490,6 +492,31 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                                 strain_x_y_xy_dict['elem_typ'][key] = float(strain_x_y_xy[7])
                             
                             gplist.append(strain_x_y_xy_dict)  
+
+                        # Add strains eps_x, eps_y, eps_xy elment infos 1 to the structure
+                        filename = step + '_strains_elem_infos_1.txt'
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            strain_x_y_xy_dict = {'nr': {},'ecu': {}, 'k_E': {}, 'k_riss': {}, 'fcc': {}} 
+                            for i in range(len(ps)):
+                                esp_x_y_y_string = ps[i].split(',')
+                                strain_x_y_xy = map(float, esp_x_y_y_string)
+                                key = int(strain_x_y_xy[0]) - 1        
+                                strain_x_y_xy_dict['nr'][key] = float(strain_x_y_xy[0])                    
+                                strain_x_y_xy_dict['ecu'][key] = float(strain_x_y_xy[1])
+                                strain_x_y_xy_dict['k_E'][key] = float(strain_x_y_xy[2])
+                                strain_x_y_xy_dict['k_riss'][key] = float(strain_x_y_xy[3])
+                                strain_x_y_xy_dict['fcc'][key] = float(strain_x_y_xy[4])
+                                
+                            
+                            gplist.append(strain_x_y_xy_dict)                              
                         
 
 
@@ -612,9 +639,36 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                     # 
                     # 
 
-                    # Steel stresses reinforcement layer 1 at each GP
+                    # Steel stresses reinforcement at each GP
                     # -------------------------------------------------------
                     if 'sig_sr' in fields or 'all' in fields:
+                                                
+                        # Add stresses elment infos to the structure
+                        filename = step + '_sig_sr_elem_infos.txt'
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            stress_dict = {'nr': {},'loc_x_glob_x': {}, 'loc_x_glob_y': {}, 'loc_x_glob_z': {}, 'loc_y_glob_x': {} , 'loc_y_glob_y': {} , 'loc_y_glob_z': {} , 'elem_typ': {} } # sig_c1 and sig_c3  top an einem GP
+                            for i in range(len(ps)):
+                                psstring = ps[i].split(',')
+                                stress = map(float, psstring)
+                                key = int(stress[0]) - 1                            
+                                stress_dict['nr'][key] = float(stress[0])
+                                stress_dict['loc_x_glob_x'][key] = float(stress[1])
+                                stress_dict['loc_x_glob_y'][key] = float(stress[2])
+                                stress_dict['loc_x_glob_z'][key] = float(stress[3])                            
+                                stress_dict['loc_y_glob_x'][key] = float(stress[4])                                                        
+                                stress_dict['loc_y_glob_y'][key] = float(stress[5])
+                                stress_dict['loc_y_glob_z'][key] = float(stress[6])
+                                stress_dict['elem_typ'][key] = float(stress[7])
+                            
+                            gplist.append(stress_dict)  
                         
                         # Add steel stress reinforcement layer 1 to the structure
                         filename = step + '_sig_sr_1L.txt'

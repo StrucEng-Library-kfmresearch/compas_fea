@@ -64,11 +64,12 @@ class Results(object):
         materials = self.structure.materials
         sets = self.structure.sets
         
-        self.write_line('*DIM,elem_infos,ARRAY,{0},20'.format(num_elements))   
+        self.write_line('*DIM,elem_infos,ARRAY,{0},24'.format(num_elements))   
         fname = 'elem_infos'
         fname_2 = 'elem_infos_2'
         fname_3 = 'elem_infos_3'
         fname_4 = 'elem_infos_4'
+        fname_5 = 'elem_infos_5'
         name_ = 'elem_infos'
             
         # Bestimmung der elementspezifischen Werte
@@ -90,7 +91,7 @@ class Results(object):
             else:
                 stype_number=0 # MPC or Other
 
-            # loop all Elements, extract local coor, psi, fsy, fsu for cmm usermat 
+            # loop all Elements, extract local coor, psi, fsy, fsu, fct, Ec, ecu for cmm usermat 
             for ele_num in sorted(selection):                    
                 ele_num_adj=ele_num+1
 
@@ -115,8 +116,13 @@ class Results(object):
                         fsu1=material.fsu1 
                         fsu2=material.fsu2
                         fsu3=material.fsu3
-                        fsu4=material.fsu4                        
-                       
+                        fsu4=material.fsu4    
+
+                        ecu=material.ecu                    
+                        k_E=material.k_E
+                        k_riss=material.k_riss
+                        fcc=material.fcc
+
 
                     if element_set.type != 'node':   
                         e_x=loc_coor_EV_XA.get('EV_XA',None)
@@ -136,7 +142,13 @@ class Results(object):
                             fsu_1=fsu1.get('fsu1',None)
                             fsu_2=fsu2.get('fsu2',None)
                             fsu_3=fsu3.get('fsu3',None)
-                            fsu_4=fsu4.get('fsu4',None)                            
+                            fsu_4=fsu4.get('fsu4',None) 
+
+                            ecu_C=ecu.get('ecu',None)                   
+                            k_E_C=k_E.get('k_E',None)      
+                            k_riss_C=k_riss.get('k_riss',None)      
+                            fcc_C=fcc.get('fcc',None) 
+
 
                         else:
                             psi_1=0# psi1.get('psi1',None)
@@ -151,6 +163,11 @@ class Results(object):
                             fsu_2=0
                             fsu_3=0
                             fsu_4=0
+                            fct_C=0
+                            k_E_C=0
+                            k_riss_C=0
+                            fcc_C=0
+
 
 
                     # Save element infos in vector elem_infos
@@ -174,6 +191,10 @@ class Results(object):
                     self.write_line('elem_infos({0},18)={1}! fsu2'.format(ele_num_adj,fsu_2))           
                     self.write_line('elem_infos({0},19)={1}! fsu3'.format(ele_num_adj,fsu_3))           
                     self.write_line('elem_infos({0},20)={1}! fsu4'.format(ele_num_adj,fsu_4))           
+                    self.write_line('elem_infos({0},21)={1}! ecu'.format(ele_num_adj,ecu_C))
+                    self.write_line('elem_infos({0},22)={1}! k_E'.format(ele_num_adj,k_E_C))
+                    self.write_line('elem_infos({0},23)={1}! k_riss'.format(ele_num_adj,k_riss_C))
+                    self.write_line('elem_infos({0},24)={1}! fcc'.format(ele_num_adj,fcc_C))
                 
                 else:
                     self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=0, mpc and other =1'.format(ele_num_adj,stype_number))   # Elementype     
@@ -235,7 +256,21 @@ class Results(object):
         self.write_line('ESEL, ALL ')
         self.write_line('ETABLE, ERAS ')
         self.write_line('! ')
-        cFile.close()                     
+        cFile.close()       
+
+
+        # Save elem_infos part 5
+        cFile = open(os.path.join(path, filename), 'a')
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname_5 + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,21), elem_infos(i,22), elem_infos(i,23), elem_infos(i,24)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close()                           
         
         # ------------------------------------------------------------------
         # Schleife uber alle angegebenen lstep (e.g. 'step_3')
@@ -374,6 +409,8 @@ class Results(object):
                 name_loc_y_glob_y ='loc_y_glob_y'
                 name_loc_y_glob_z ='loc_y_glob_z'
                 name_elem_typ ='elem_typ'
+                name_fcc ='fcc'
+                name_kriss ='k_riss'
 
                 cFile = open(os.path.join(path, filename), 'a')
                 self.blank_line()
@@ -395,6 +432,8 @@ class Results(object):
                 self.write_line('*DIM,loc_y_glob_y,ARRAY,4*NrE,1')
                 self.write_line('*DIM,loc_y_glob_z,ARRAY,4*NrE,1')
                 self.write_line('*DIM,elem_typ,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fcc,ARRAY,4*NrE,1')
+                self.write_line('*DIM,k_riss,ARRAY,4*NrE,1')
 
                 self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
                 self.write_line('*dim,' + name_ + ', ,4*NrE')
@@ -422,7 +461,8 @@ class Results(object):
                 self.write_line('loc_y_glob_y(aux,1)=elem_infos(ii,7)') 
                 self.write_line('loc_y_glob_z(aux,1)=elem_infos(ii,8)') 
                 self.write_line('elem_typ(aux,1)=elem_infos(ii,1)') 
-           
+                self.write_line('fcc(aux,1)=elem_infos(ii,24)')    
+                self.write_line('k_riss(aux,1)=elem_infos(ii,23)')         
 
                 self.write_line('*ENDDO')
                 self.write_line('*DEL,N_N,,NOPR')
@@ -436,8 +476,8 @@ class Results(object):
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
 
                 self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
-                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_loc_x_glob_x + '(1) , \',\' , ' + name_loc_x_glob_y + '(1) , \',\' ,' + name_loc_x_glob_z + '(1) , \',\' ,'+ name_loc_y_glob_x + '(1) , \',\' ,' + name_loc_y_glob_y + '(1) , \',\' ,'+ name_loc_y_glob_z + '(1) , \',\' ,' + name_elem_typ + '(1) ')
-                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_loc_x_glob_x + '(1) , \',\' , ' + name_loc_x_glob_y + '(1) , \',\' ,' + name_loc_x_glob_z + '(1) , \',\' ,'+ name_loc_y_glob_x + '(1) , \',\' ,' + name_loc_y_glob_y + '(1) , \',\' ,' + name_loc_y_glob_z + '(1) , \',\' ,' + name_elem_typ + '(1) , \',\' ,' + name_fcc + '(1) , \',\' ,'  + name_kriss + '(1) ')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')
 
                 self.write_line('!')
@@ -539,7 +579,7 @@ class Results(object):
                 self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68') 
                 self.write_line('sig_c1(aux,1)=(sig_x+sig_y)/2+SQRT((1/2)*((sig_x+sig_y)*(sig_x+sig_y)+(2*sig_xy)*(2*sig_xy)))')
                 self.write_line('sig_c3(aux,1)=(sig_x+sig_y)/2-SQRT((1/2)*((sig_x+sig_y)*(sig_x+sig_y)+(2*sig_xy)*(2*sig_xy)))')
-                self.write_line('fcc_eff(aux,1)=0')
+                self.write_line('fcc_eff(aux,1)=elem_infos(ii,24)')
 
                 self.write_line('*ELSEIF,usedmodel_check,EQ,4,THEN')
                 self.write_line('sig_c1(aux,1)=0')
@@ -555,7 +595,7 @@ class Results(object):
                 self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
                 self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
                 self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68')                
-                self.write_line('fcc_eff(aux,1)=0')
+                self.write_line('fcc_eff(aux,1)=elem_infos(ii,24)')
                 
                 self.write_line('*ENDIF')
 
@@ -670,7 +710,7 @@ class Results(object):
                 self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68') 
                 self.write_line('sig_c1(aux,1)=(sig_x+sig_y)/2+SQRT((1/2)*((sig_x+sig_y)*(sig_x+sig_y)+(2*sig_xy)*(2*sig_xy)))')
                 self.write_line('sig_c3(aux,1)=(sig_x+sig_y)/2-SQRT((1/2)*((sig_x+sig_y)*(sig_x+sig_y)+(2*sig_xy)*(2*sig_xy)))')
-                self.write_line('fcc_eff(aux,1)=0')
+                self.write_line('fcc_eff(aux,1)=elem_infos(ii,24)')
 
                 self.write_line('*ELSEIF,usedmodel_check,EQ,4,THEN')
                 self.write_line('sig_c1(aux,1)=0')
@@ -686,7 +726,7 @@ class Results(object):
                 self.write_line('*GET,sig_x(aux,1),NODE,N_N(kk),SVAR,66')                
                 self.write_line('*GET,sig_y(aux,1),NODE,N_N(kk),SVAR,67')                
                 self.write_line('*GET,tau_xy(aux,1),NODE,N_N(kk),SVAR,68')                
-                self.write_line('fcc_eff(aux,1)=0')
+                self.write_line('fcc_eff(aux,1)=elem_infos(ii,24)')
                 
                 self.write_line('*ENDIF')
 
@@ -724,7 +764,8 @@ class Results(object):
                 # Benotigte Element infos abspeichern fur stresses (MAYBE TO REMOVE)
                 # --------------------------------------------
                 fname = str(step_name) + '_' + 'strains_elem_infos'
-                name_ = 'eps_info_GP'
+                fname_1 = str(step_name) + '_' + 'strains_elem_infos_1'
+                name_ = 'eps_info_GP'                
                 name_loc_x_glob_x ='loc_x_glob_x'
                 name_loc_x_glob_y ='loc_x_glob_y'
                 name_loc_x_glob_z ='loc_x_glob_z'
@@ -732,6 +773,12 @@ class Results(object):
                 name_loc_y_glob_y ='loc_y_glob_y'
                 name_loc_y_glob_z ='loc_y_glob_z'
                 name_elem_typ ='elem_typ'
+                name_ecu ='ecu'
+                name_kE ='k_E'
+                name_kriss ='k_riss'
+                name_fcc ='fcc'
+                
+                
 
                 cFile = open(os.path.join(path, filename), 'a')
                 self.blank_line()
@@ -753,6 +800,11 @@ class Results(object):
                 self.write_line('*DIM,loc_y_glob_y,ARRAY,4*NrE,1')
                 self.write_line('*DIM,loc_y_glob_z,ARRAY,4*NrE,1')
                 self.write_line('*DIM,elem_typ,ARRAY,4*NrE,1')
+                self.write_line('*DIM,ecu,ARRAY,4*NrE,1')
+                self.write_line('*DIM,k_E,ARRAY,4*NrE,1')
+                self.write_line('*DIM,k_riss,ARRAY,4*NrE,1')
+                self.write_line('*DIM,fcc,ARRAY,4*NrE,1')
+                
 
                 self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
                 self.write_line('*dim,' + name_ + ', ,4*NrE')
@@ -780,8 +832,12 @@ class Results(object):
                 self.write_line('loc_y_glob_y(aux,1)=elem_infos(ii,7)') 
                 self.write_line('loc_y_glob_z(aux,1)=elem_infos(ii,8)') 
                 self.write_line('elem_typ(aux,1)=elem_infos(ii,1)') 
-           
-
+                self.write_line('ecu(aux,1)=elem_infos(ii,21)') 
+                self.write_line('k_E(aux,1)=elem_infos(ii,22)') 
+                self.write_line('k_riss(aux,1)=elem_infos(ii,23)') 
+                self.write_line('fcc(aux,1)=elem_infos(ii,24)')
+                
+        
                 self.write_line('*ENDDO')
                 self.write_line('*DEL,N_N,,NOPR')
                 self.write_line('*DEL,NrN,,NOPR')
@@ -792,9 +848,14 @@ class Results(object):
                 self.write_line('*DEL,N_E,,NOPR')
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
-
                 self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
                 self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_loc_x_glob_x + '(1) , \',\' , ' + name_loc_x_glob_y + '(1) , \',\' ,' + name_loc_x_glob_z + '(1) , \',\' ,'+ name_loc_y_glob_x + '(1) , \',\' ,' + name_loc_y_glob_y + '(1) , \',\' ,'+ name_loc_y_glob_z + '(1) , \',\' ,' + name_elem_typ + '(1) ')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname_1 + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_ecu + '(1) , \',\' , ' + name_kE + '(1) , \',\' ,' + name_kriss + '(1) , \',\' ,' + name_fcc + '(1) ')
                 self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')
 
@@ -886,11 +947,11 @@ class Results(object):
 
 
                 self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
-
                 self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
                 self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_eps_x + '(1) , \',\' ,' + name_eps_y + '(1) , \',\' ,'+ name_eps_xy + '(1) , \',\' ,' + name_bruch + '(1) , \',\' ,'+ name_coor_intp_layer_x + '(1) , \',\' ,'  + name_coor_intp_layer_y + '(1) , \',\' ,' + name_coor_intp_layer_z + '(1)')
                 self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
                 self.write_line('*cfclose \n')
+                
 
                 self.write_line('!')
                 self.write_line('!')
@@ -1166,6 +1227,89 @@ class Results(object):
             # ------------------------------------------------------------------               
             if 'sig_sr' in fields or 'all' in fields:
 
+
+
+                # Benotigte Element infos abspeichern fur steel stresses (MAYBE TO REMOVE)
+                # --------------------------------------------
+                fname = str(step_name) + '_' + 'sig_sr_elem_infos'
+                name_ = 'sig_sr_info_GP'
+                name_loc_x_glob_x ='loc_x_glob_x'
+                name_loc_x_glob_y ='loc_x_glob_y'
+                name_loc_x_glob_z ='loc_x_glob_z'
+                name_loc_y_glob_x ='loc_y_glob_x'
+                name_loc_y_glob_y ='loc_y_glob_y'
+                name_loc_y_glob_z ='loc_y_glob_z'
+                name_elem_typ ='elem_typ'
+
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write element infos for steel stresses in Shell Elements')
+                self.blank_line()
+                
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
+
+                # Aufbau der Arrays
+                self.write_line('*DIM,loc_x_glob_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,loc_x_glob_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,loc_x_glob_z,ARRAY,4*NrE,1')
+                self.write_line('*DIM,loc_y_glob_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,loc_y_glob_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,loc_y_glob_z,ARRAY,4*NrE,1')
+                self.write_line('*DIM,elem_typ,ARRAY,4*NrE,1')
+
+                self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE') # Loop uber alle Elemente                
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                
+                self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')                             
+                            
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')
+
+
+                self.write_line('loc_x_glob_x(aux,1)=elem_infos(ii,3)') 
+                self.write_line('loc_x_glob_y(aux,1)=elem_infos(ii,4)') 
+                self.write_line('loc_x_glob_z(aux,1)=elem_infos(ii,5)') 
+                self.write_line('loc_y_glob_x(aux,1)=elem_infos(ii,6)') 
+                self.write_line('loc_y_glob_y(aux,1)=elem_infos(ii,7)') 
+                self.write_line('loc_y_glob_z(aux,1)=elem_infos(ii,8)') 
+                self.write_line('elem_typ(aux,1)=elem_infos(ii,1)') 
+           
+
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR')
+                self.write_line('*else')    
+                self.write_line('*endif')  
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_loc_x_glob_x + '(1) , \',\' , ' + name_loc_x_glob_y + '(1) , \',\' ,' + name_loc_x_glob_z + '(1) , \',\' ,'+ name_loc_y_glob_x + '(1) , \',\' ,' + name_loc_y_glob_y + '(1) , \',\' ,'+ name_loc_y_glob_z + '(1) , \',\' ,' + name_elem_typ + '(1) ')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close()                   
+
                 # Reinforcement Layer 1
                 # --------------------------------------------
                 fname_1L = str(step_name) + '_' + 'sig_sr_1L'
@@ -1397,5 +1541,4 @@ class Results(object):
         self.write_line('*cfopen,run_ansys_check,txt ')
         self.blank_line()
         self.blank_line()
-            
-
+    

@@ -584,9 +584,14 @@ def principal_stresses(data, kind='sigma'):
     # Berechnung der Hauptspannungen 3 und 1
     for b in range(length_stress): # Start bei Null 0 bis length_stress-1
         
-        sig_x_GP=stress_results[b][0]
-        sig_y_GP=stress_results[b][1]
-        tau_xy_GP=stress_results[b][2]
+        if kind=='sigma':
+            sig_x_GP=stress_results[b][0]
+            sig_y_GP=stress_results[b][1]        
+            tau_xy_GP=stress_results[b][2]
+        elif kind=='eps': 
+            sig_x_GP=stress_results[b][0]
+            sig_y_GP=stress_results[b][1]        
+            tau_xy_GP=stress_results[b][2]/2    
 
         ew_GP, ev_GP = np.linalg.eig([[sig_x_GP, tau_xy_GP], [tau_xy_GP, sig_y_GP]]) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
         ew_top.append(ew_GP)
@@ -606,9 +611,14 @@ def principal_stresses(data, kind='sigma'):
     # Berechnung der Hauptspannungen 3 und 1
     for b in range(length_stress): # Start bei Null 0 bis length_stress-1
         
-        sig_x_GP=stress_results[b][0]
-        sig_y_GP=stress_results[b][1]
-        tau_xy_GP=stress_results[b][2]
+        if kind=='sigma':
+            sig_x_GP=stress_results[b][0]
+            sig_y_GP=stress_results[b][1]        
+            tau_xy_GP=stress_results[b][2]
+        elif kind=='eps': 
+            sig_x_GP=stress_results[b][0]
+            sig_y_GP=stress_results[b][1]        
+            tau_xy_GP=stress_results[b][2]/2  
 
         ew_GP, ev_GP = np.linalg.eig([[sig_x_GP, tau_xy_GP], [tau_xy_GP, sig_y_GP]]) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
         ew_bot.append(ew_GP)
