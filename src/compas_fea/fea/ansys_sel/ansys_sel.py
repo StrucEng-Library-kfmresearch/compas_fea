@@ -275,6 +275,9 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                 else:
                     # extract gerneal element infos                    
                     #filename = step + '_elem_infos.txt'
+
+                    # ELEM_INFOS.txt
+                    # -------------------------------
                     filename = 'elem_infos.txt'
 
                     isfile_filename=str(out_path) + "\\" + filename
@@ -305,7 +308,99 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
 
                         elem_infos_list.append(elem_infos_dict)  
 
+                    # ELEM_INFOS_2.txt
+                    # -------------------------------
+                    filename = 'elem_infos_2.txt'
 
+                    isfile_filename=str(out_path) + "\\" + filename
+            
+                    if os.path.isfile(isfile_filename)==True:
+                        
+                        efile = open(os.path.join(out_path, filename), 'r')    
+                        e_i = efile.readlines()                    
+                        #leeres Resultat dict.                    
+                        elem_infos_dict = {'elem_nr' : {}, 'elem_typ' : {}, 'psi_1' : {}, 'psi_2' : {},  'psi_3' : {}, 'psi_4' : {}}
+                        
+                        
+                        #print
+                        for i in range(len(e_i)):
+                            
+                            e_i_string = e_i[i].split(',')
+                            ele = map(float, e_i_string[1:])
+                            key = int(ele[0]) - 1                                                    
+                            # Speichert Resultate von fuer Elemente im gesamt Resultatverzeichnis (result_data)
+                            elem_infos_dict['elem_nr'][key]=float(ele[0])
+                            elem_infos_dict['elem_typ'][key]=float(ele[1])
+                            elem_infos_dict['psi_1'][key]=float(ele[2])
+                            elem_infos_dict['psi_2'][key]=float(ele[3])
+                            elem_infos_dict['psi_3'][key]=float(ele[4])
+                            elem_infos_dict['psi_4'][key]=float(ele[5])
+
+                        elem_infos_list.append(elem_infos_dict)  
+
+                    # ELEM_INFOS_6.txt
+                    # -------------------------------
+                    filename = 'elem_infos_6.txt'
+
+                    isfile_filename=str(out_path) + "\\" + filename
+            
+                    if os.path.isfile(isfile_filename)==True:
+                        
+                        efile = open(os.path.join(out_path, filename), 'r')    
+                        e_i = efile.readlines()                    
+                        #leeres Resultat dict.                    
+                        elem_infos_dict = {'elem_nr' : {}, 'elem_typ' : {}, 'dm1' : {}, 'dm2' : {}, 'dm3' : {}, 'dm4' : {}}
+                        
+                        
+                        #print
+                        for i in range(len(e_i)):
+                            
+                            e_i_string = e_i[i].split(',')
+                            ele = map(float, e_i_string[1:])
+                            key = int(ele[0]) - 1                                                    
+                            # Speichert Resultate von fuer Elemente im gesamt Resultatverzeichnis (result_data)
+                            elem_infos_dict['elem_nr'][key]=float(ele[0])
+                            elem_infos_dict['elem_typ'][key]=float(ele[1])
+                            elem_infos_dict['dm1'][key]=float(ele[2])
+                            elem_infos_dict['dm2'][key]=float(ele[3])
+                            elem_infos_dict['dm3'][key]=float(ele[4])
+                            elem_infos_dict['dm4'][key]=float(ele[5])
+    
+
+                        elem_infos_list.append(elem_infos_dict)     
+
+                    # ELEM_INFOS_7.txt
+                    # -------------------------------
+                    filename = 'elem_infos_7.txt'
+
+                    isfile_filename=str(out_path) + "\\" + filename
+            
+                    if os.path.isfile(isfile_filename)==True:
+                        
+                        efile = open(os.path.join(out_path, filename), 'r')    
+                        e_i = efile.readlines()                    
+                        #leeres Resultat dict.                    
+                        elem_infos_dict = {'elem_nr' : {}, 'elem_typ' : {}, 'oo' : {}, 'uu' : {}, 'h_shell' : {}, 'LNr_d06_bot' : {}, 'LNr_d06_top' : {}, 'fcc' : {}}
+                        
+                        
+                        #print
+                        for i in range(len(e_i)):
+                            
+                            e_i_string = e_i[i].split(',')
+                            ele = map(float, e_i_string[1:])
+                            key = int(ele[0]) - 1                                                    
+                            # Speichert Resultate von fuer Elemente im gesamt Resultatverzeichnis (result_data)
+                            elem_infos_dict['elem_nr'][key]=float(ele[0])
+                            elem_infos_dict['elem_typ'][key]=float(ele[1])
+                            elem_infos_dict['oo'][key]=float(ele[2])
+                            elem_infos_dict['uu'][key]=float(ele[3])
+                            elem_infos_dict['h_shell'][key]=float(ele[4])
+                            elem_infos_dict['LNr_d06_bot'][key]=float(ele[5])
+                            elem_infos_dict['LNr_d06_top'][key]=float(ele[6])
+                            elem_infos_dict['fcc'][key]=float(ele[7])                            
+    
+
+                        elem_infos_list.append(elem_infos_dict)                                               
 
 
                     # Displacements at nodes (node fields)
@@ -639,7 +734,70 @@ def extract_data(structure, fields, exe, output, return_data, components, error_
                         
                                         
                     # 
-                    # 
+                    # eps_x, eps_x and eps_xy at 06 top and bot 
+                    # -------------------------------------------------------
+                    if 'eps' in fields or 'all' in fields:
+                        
+         
+                        # Add strains TOP to the structure
+                        filename = step + '_eps_x_y_xy_06_bot.txt'
+                        
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            strain_x_y_xy_dict = {'GP_name_06d_bot': {},'elem_nr_06d_bot': {}, 'eps_x_06d_bot': {}, 'eps_y_06d_bot': {}, 'eps_xy_06d_bot': {}, 'layer_06d_bot': {} , 'coor_intp_layer_x_06d_bot': {} , 'coor_intp_layer_y_06d_bot': {}, 'coor_intp_layer_z_06d_bot': {}} 
+                            for i in range(len(ps)):
+                                esp_x_y_y_string = ps[i].split(',')
+                                strain_x_y_xy = map(float, esp_x_y_y_string)
+                                key = int(strain_x_y_xy[0]) - 1                            
+                                strain_x_y_xy_dict['GP_name_06d_bot'][key] = float(strain_x_y_xy[0])
+                                strain_x_y_xy_dict['elem_nr_06d_bot'][key] = float(strain_x_y_xy[1])
+                                strain_x_y_xy_dict['eps_x_06d_bot'][key] = float(strain_x_y_xy[2])
+                                strain_x_y_xy_dict['eps_y_06d_bot'][key] = float(strain_x_y_xy[3])                            
+                                strain_x_y_xy_dict['eps_xy_06d_bot'][key] = float(strain_x_y_xy[4])                                                        
+                                strain_x_y_xy_dict['layer_06d_bot'][key] = float(strain_x_y_xy[5])   
+                                strain_x_y_xy_dict['coor_intp_layer_x_06d_bot'][key] = float(strain_x_y_xy[6])
+                                strain_x_y_xy_dict['coor_intp_layer_y_06d_bot'][key] = float(strain_x_y_xy[7])
+                                strain_x_y_xy_dict['coor_intp_layer_z_06d_bot'][key] = float(strain_x_y_xy[8])
+                                print(strain_x_y_xy_dict)
+                            gplist.append(strain_x_y_xy_dict)  
+
+                        
+          
+                        # Add strains TOP to the structure
+                        filename = step + '_eps_x_y_xy_06_top.txt'
+                        
+                        isfile_filename=str(out_path) + "\\" + filename
+                                            
+                            
+                        if os.path.isfile(isfile_filename)==True:          
+                            psfile = open(os.path.join(out_path, filename), 'r')
+                            ps = psfile.readlines()
+                                        
+                            
+                            strain_x_y_xy_dict = {'GP_name_06d_top': {},'elem_nr_06d_top': {}, 'eps_x_06d_top': {}, 'eps_y_06d_top': {}, 'eps_xy_06d_top': {}, 'layer_06d_top': {} , 'coor_intp_layer_x_06d_top': {} , 'coor_intp_layer_y_06d_top': {}, 'coor_intp_layer_z_06d_top': {}} 
+                            for i in range(len(ps)):
+                                esp_x_y_y_string = ps[i].split(',')
+                                strain_x_y_xy = map(float, esp_x_y_y_string)
+                                key = int(strain_x_y_xy[0]) - 1                            
+                                strain_x_y_xy_dict['GP_name_06d_top'][key] = float(strain_x_y_xy[0])
+                                strain_x_y_xy_dict['elem_nr_06d_top'][key] = float(strain_x_y_xy[1])
+                                strain_x_y_xy_dict['eps_x_06d_top'][key] = float(strain_x_y_xy[2])
+                                strain_x_y_xy_dict['eps_y_06d_top'][key] = float(strain_x_y_xy[3])                            
+                                strain_x_y_xy_dict['eps_xy_06d_top'][key] = float(strain_x_y_xy[4])                                                        
+                                strain_x_y_xy_dict['layer_06d_top'][key] = float(strain_x_y_xy[5])   
+                                strain_x_y_xy_dict['coor_intp_layer_x_06d_top'][key] = float(strain_x_y_xy[6])
+                                strain_x_y_xy_dict['coor_intp_layer_y_06d_top'][key] = float(strain_x_y_xy[7])
+                                strain_x_y_xy_dict['coor_intp_layer_z_06d_top'][key] = float(strain_x_y_xy[8])
+                            
+                            gplist.append(strain_x_y_xy_dict)  
+
 
                     # Steel stresses reinforcement at each GP
                     # -------------------------------------------------------

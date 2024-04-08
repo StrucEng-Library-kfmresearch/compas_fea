@@ -466,6 +466,7 @@ class ShellSection(Section):
         self.loc_coords_EV_YA ={'EV_YA': semi_loc_coords[5]} 
         self.loc_coords_EV_ZA ={'EV_ZA': semi_loc_coords[6]} 
         self.nr_layers={'nn': nn} 
+        self.h_shell={'h_shell': t}
      
         self.offset={'mode': offset_mode}
 

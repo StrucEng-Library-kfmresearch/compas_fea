@@ -64,12 +64,14 @@ class Results(object):
         materials = self.structure.materials
         sets = self.structure.sets
         
-        self.write_line('*DIM,elem_infos,ARRAY,{0},24'.format(num_elements))   
+        self.write_line('*DIM,elem_infos,ARRAY,{0},33'.format(num_elements))   
         fname = 'elem_infos'
         fname_2 = 'elem_infos_2'
         fname_3 = 'elem_infos_3'
         fname_4 = 'elem_infos_4'
         fname_5 = 'elem_infos_5'
+        fname_6 = 'elem_infos_6'
+        fname_7 = 'elem_infos_7'
         name_ = 'elem_infos'
             
         # Bestimmung der elementspezifischen Werte
@@ -84,7 +86,7 @@ class Results(object):
             element_set = sets[property.elset]
             selection = property.elements if property.elements else sets[elset].selection # Zum elemeset zugehorige Elementnummern
             mtype = material.__name__
-
+            
             # define element type 
             if stype == 'ShellSection':
                 stype_number=1 # Schalenelement
@@ -123,6 +125,19 @@ class Results(object):
                         k_riss=material.k_riss
                         fcc=material.fcc
 
+                        dm1=material.dm1
+                        dm2=material.dm2
+                        dm3=material.dm3
+                        dm4=material.dm4
+
+                        coo=material.oo
+                        cuu=material.uu
+
+                        h_shell=section.h_shell                        
+                        nr_layers=section.nr_layers 
+                        
+                        
+
 
                     if element_set.type != 'node':   
                         e_x=loc_coor_EV_XA.get('EV_XA',None)
@@ -149,6 +164,28 @@ class Results(object):
                             k_riss_C=k_riss.get('k_riss',None)      
                             fcc_C=fcc.get('fcc',None) 
 
+                            dm_1=dm1.get('dm1',None) 
+                            dm_2=dm2.get('dm2',None) 
+                            dm_3=dm3.get('dm3',None) 
+                            dm_4=dm4.get('dm4',None) 
+
+                            c_oo=coo.get('oo',None) 
+                            c_uu=coo.get('oo',None)
+
+                            h_shell_=h_shell.get('h_shell',None)  
+                            
+                            nn_ = nr_layers.get('nn', None)
+                            
+                            # values for shear verification
+                            delta_h_= h_shell_/nn_
+
+                            d06_bot=((h_shell_-c_oo-dm_4/2)+(h_shell_-c_oo-dm_3/2))/2
+                            LNr_d06_bot=round(1/delta_h_*d06_bot)
+
+
+                            d06_top=((h_shell_-c_uu-dm_1/2)+(h_shell_-c_uu-dm_2/2))/2
+                            d06_top_strich=h_shell_-d06_top
+                            LNr_d06_top=round(1/delta_h_*d06_top_strich)
 
                         else:
                             psi_1=0# psi1.get('psi1',None)
@@ -194,7 +231,17 @@ class Results(object):
                     self.write_line('elem_infos({0},21)={1}! ecu'.format(ele_num_adj,ecu_C))
                     self.write_line('elem_infos({0},22)={1}! k_E'.format(ele_num_adj,k_E_C))
                     self.write_line('elem_infos({0},23)={1}! k_riss'.format(ele_num_adj,k_riss_C))
-                    self.write_line('elem_infos({0},24)={1}! fcc'.format(ele_num_adj,fcc_C))
+                    self.write_line('elem_infos({0},24)={1}! dm1'.format(ele_num_adj,dm_1))
+                    self.write_line('elem_infos({0},25)={1}! dm2'.format(ele_num_adj,dm_2)) 
+                    self.write_line('elem_infos({0},26)={1}! dm3'.format(ele_num_adj,dm_3)) 
+                    self.write_line('elem_infos({0},27)={1}! dm4'.format(ele_num_adj,dm_4)) 
+                    self.write_line('elem_infos({0},28)={1}! oo'.format(ele_num_adj,c_oo)) 
+                    self.write_line('elem_infos({0},29)={1}! uu'.format(ele_num_adj,c_uu)) 
+                    self.write_line('elem_infos({0},30)={1}! h_shell'.format(ele_num_adj,h_shell_))                     
+                    self.write_line('elem_infos({0},31)={1}! LNr_d06_bot'.format(ele_num_adj,LNr_d06_bot)) 
+                    self.write_line('elem_infos({0},32)={1}! LNr_d06_top'.format(ele_num_adj,LNr_d06_top)) 
+                    self.write_line('elem_infos({0},33)={1}! fcc'.format(ele_num_adj,fcc_C)) 
+
                 
                 else:
                     self.write_line('elem_infos({0},1)={1} ! Elementyp e.g. shell=0, mpc and other =1'.format(ele_num_adj,stype_number))   # Elementype     
@@ -270,7 +317,34 @@ class Results(object):
         self.write_line('ESEL, ALL ')
         self.write_line('ETABLE, ERAS ')
         self.write_line('! ')
-        cFile.close()                           
+        cFile.close()
+
+        # Save elem_infos part 6
+        cFile = open(os.path.join(path, filename), 'a')
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname_6 + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,24), elem_infos(i,25), elem_infos(i,26), elem_infos(i,27)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close()         
+
+        # Save elem_infos part 7
+        cFile = open(os.path.join(path, filename), 'a')
+        self.write_line('allsel')
+        self.write_line('*get, nelem, elem,, count ')
+        self.write_line('*cfopen,' + out_path + '/' + fname_7 + ',txt ')                
+        self.write_line('*do,i,1,nelem ')            
+        self.write_line('*CFWRITE, elem_infos, elem_infos(i,2), elem_infos(i,1), elem_infos(i,28), elem_infos(i,29), elem_infos(i,30), elem_infos(i,31), elem_infos(i,32), elem_infos(i,33)')
+        self.write_line('*Enddo ')
+        self.write_line('ESEL, ALL ')
+        self.write_line('ETABLE, ERAS ')
+        self.write_line('! ')
+        cFile.close()                                   
+                                          
         
         # ------------------------------------------------------------------
         # Schleife uber alle angegebenen lstep (e.g. 'step_3')
@@ -344,7 +418,7 @@ class Results(object):
                 self.write_line('! Write Shell forces and moments')
                 self.blank_line()
                 self.write_line('allsel')
-
+                self.write_line('ETABLE, ERAS ')
                 self.write_line('ETABLE, , SMISC, 1 ')  # N11 In-plane forces (per unit length)
                 self.write_line('ETABLE, , SMISC, 2 ')  # N22 In-plane forces (per unit length)
                 self.write_line('ETABLE, , SMISC, 3 ')  # N12 In-plane forces (per unit length)
@@ -388,8 +462,8 @@ class Results(object):
                 self.write_line('ETABLE, ERAS ')
                 self.write_line('! ')
                 cFile.close()
-
-
+            
+           
             # ------------------------------------------------------------------
             # WRITE DATA AT GP
             # ------------------------------------------------------------------    
@@ -756,6 +830,9 @@ class Results(object):
           
             else:
                 pass 
+                              
+                
+
 
             # Write eps_x, eps_y and eps_xy strains at top and bottom Elementlayer at every GP
             # -------------------------------------------------------------------------------   
@@ -1222,6 +1299,190 @@ class Results(object):
           
             else:
                 pass 
+
+
+            #  Write Eps 06d top and bot for shear verification
+            # ------------------------------------------------------------------
+            if 'eps' in fields or 'all' in fields:
+
+                # eps x,y, xy 06 bot 
+                # --------------------------------------------
+                fname = str(step_name) + '_' + 'eps_x_y_xy_06_bot'
+                name_ = 'eps_x_y_xy_06_bot_GP'
+                name_elem_nr = 'elem_nr'
+                name_eps_x = 'eps_x'
+                name_eps_y = 'eps_y'
+                name_eps_xy = 'eps_xy'                            
+                name_coor_intp_layer_x ='coor_intp_layer_x'
+                name_coor_intp_layer_y ='coor_intp_layer_y'
+                name_coor_intp_layer_z ='coor_intp_layer_z'
+                name_layer_06d_bot ='layer_06d_bot'
+        
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write strains at 06 d from bot in Shell Elements')
+                self.blank_line()
+                
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
+
+                # Aufbau der Arrays
+                self.write_line('*DIM,eps_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,eps_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,eps_xy,ARRAY,4*NrE,1')                                
+
+                self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                self.write_line('*DIM,coor_intp_layer_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_z,ARRAY,4*NrE,1')               
+                self.write_line('*DIM,layer_06d_bot,ARRAY,4*NrE,1')       
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE') # Loop uber alle Elemente                
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                
+                self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')          
+                
+                # actuel Layer number to exctract eps
+                self.write_line('LNr_d06_bot_act=elem_infos(ii,31)')                
+
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')                           
+
+                self.write_line('LAYER,LNr_d06_bot_act')
+                self.write_line('elem_nr(aux,1)=N_E(ii)')                
+                self.write_line('layer_06d_bot(aux,1)=LNr_d06_bot_act')
+
+                self.write_line('*GET,eps_x(aux,1),NODE,N_N(kk),SVAR,69')                
+                self.write_line('*GET,eps_y(aux,1),NODE,N_N(kk),SVAR,70')                
+                self.write_line('*GET,eps_xy(aux,1),NODE,N_N(kk),SVAR,71')                                                                    
+
+                self.write_line('*GET,coor_intp_layer_x(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_intp_layer_y(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_intp_layer_z(aux,1),NODE,N_N(kk),SVAR,65')               
+
+                self.write_line('*ENDDO')
+                
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR')
+                self.write_line('*else')    
+                self.write_line('*endif')  
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_eps_x + '(1) , \',\' ,' + name_eps_y + '(1) , \',\' ,'+ name_eps_xy + '(1) , \',\' ,' + name_layer_06d_bot + '(1) , \',\' ,'+ name_coor_intp_layer_x + '(1) , \',\' ,'  + name_coor_intp_layer_y + '(1) , \',\' ,' + name_coor_intp_layer_z + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+                
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close()       
+
+                # eps x,y, xy 06 top 
+                # --------------------------------------------
+                fname = str(step_name) + '_' + 'eps_x_y_xy_06_top'
+                name_ = 'eps_x_y_xy_06_top_GP'
+                name_elem_nr = 'elem_nr'
+                name_eps_x = 'eps_x'
+                name_eps_y = 'eps_y'
+                name_eps_xy = 'eps_xy'                            
+                name_coor_intp_layer_x ='coor_intp_layer_x'
+                name_coor_intp_layer_y ='coor_intp_layer_y'
+                name_coor_intp_layer_z ='coor_intp_layer_z'
+                name_layer_06d_top ='layer_06d_top'
+
+        
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write strains at 06 d from top in Shell Elements')
+                self.blank_line()
+                
+                # Liste mit allen Elementen aufbauen                 
+                self.write_line('allsel')
+                self.write_line('nsel,all')
+                self.write_line('*get,NrE,elem,0,count') # NrE=Anzahl Elemente
+                self.write_line('*dim,N_E,array,NrE,1')
+                self.write_line('*vget,N_E,elem,,elist') # N_E=Element liste
+
+                # Aufbau der Arrays
+                self.write_line('*DIM,eps_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,eps_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,eps_xy,ARRAY,4*NrE,1')                                
+
+                self.write_line('*DIM,elem_nr,ARRAY,4*NrE,1')
+                self.write_line('*dim,' + name_ + ', ,4*NrE')
+                self.write_line('*DIM,coor_intp_layer_x,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_y,ARRAY,4*NrE,1')
+                self.write_line('*DIM,coor_intp_layer_z,ARRAY,4*NrE,1')               
+                self.write_line('*DIM,layer_06d_top,ARRAY,4*NrE,1')       
+  
+                
+                # Extract Principal stresses from usermat
+                self.write_line('aux=0')
+
+                self.write_line('*DO,ii,1,NrE') # Loop uber alle Elemente                
+                self.write_line('ESEL,S,ELEM, ,N_E(ii)')
+                
+                self.write_line('*if,elem_infos(ii,1),EQ,1,THEN  ')          
+                
+                # actuel Layer number to exctract eps
+                self.write_line('LNr_d06_top_act=elem_infos(ii,32)')                
+
+                self.write_line('NSLE,ALL')
+                self.write_line('*GET,NrN,NODE,0,COUNT ')
+                self.write_line('*DIM,N_N,ARRAY,NrN,1')
+                self.write_line('*VGET,N_N,NODE, ,NLIST')
+                self.write_line('*DO,kk,1,NrN')
+                self.write_line('aux = aux+1')                           
+
+                self.write_line('LAYER,LNr_d06_top_act')
+                self.write_line('elem_nr(aux,1)=N_E(ii)')                
+                self.write_line('layer_06d_top(aux,1)=LNr_d06_top_act')  
+                                              
+                self.write_line('*GET,eps_x(aux,1),NODE,N_N(kk),SVAR,69')                
+                self.write_line('*GET,eps_y(aux,1),NODE,N_N(kk),SVAR,70')                
+                self.write_line('*GET,eps_xy(aux,1),NODE,N_N(kk),SVAR,71')                                 
+
+                self.write_line('*GET,coor_intp_layer_x(aux,1),NODE,N_N(kk),SVAR,63')
+                self.write_line('*GET,coor_intp_layer_y(aux,1),NODE,N_N(kk),SVAR,64')
+                self.write_line('*GET,coor_intp_layer_z(aux,1),NODE,N_N(kk),SVAR,65')               
+
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,N_N,,NOPR')
+                self.write_line('*DEL,NrN,,NOPR')
+                self.write_line('*else')    
+                self.write_line('*endif')  
+                self.write_line('*ENDDO')
+                self.write_line('*DEL,NrE,,NOPR')
+                self.write_line('*DEL,N_E,,NOPR')
+
+
+                self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_elem_nr + '(1) , \',\' , ' + name_eps_x + '(1) , \',\' ,' + name_eps_y + '(1) , \',\' ,'+ name_eps_xy + '(1) , \',\' ,'+ name_layer_06d_top + '(1) , \',\' ,'  + name_coor_intp_layer_x + '(1) , \',\' ,'  + name_coor_intp_layer_y + '(1) , \',\' ,' + name_coor_intp_layer_z + '(1)')
+                self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                self.write_line('*cfclose \n')
+                
+
+                self.write_line('!')
+                self.write_line('!')
+                cFile.close() 
 
             # Write steel stresses at reinforcement Layer 1-4 at every GP
             # ------------------------------------------------------------------               
