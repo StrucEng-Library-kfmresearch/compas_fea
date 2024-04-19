@@ -571,13 +571,15 @@ def principal_stresses(data, kind='sigma'):
     """
     # Top Spannungen
     # -----------------------------------------------------------------------------------
+    
     if kind=='sigma':
         components = ['sig_x_top', 'sig_y_top', 'tau_xy_top']
     elif kind=='eps':
         components = ['eps_x_top', 'eps_y_top', 'eps_xy_top']
     
-
+   
     stress_results = list(zip(*[data[stress_name].values() for stress_name in components]))
+    
     length_stress=len(stress_results)
     ew_top=[]
     ev_top=[]
