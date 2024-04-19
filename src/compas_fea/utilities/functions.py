@@ -625,7 +625,8 @@ def principal_stresses(data, kind='sigma'):
         ew_GP, ev_GP = np.linalg.eig([[sig_x_GP, tau_xy_GP], [tau_xy_GP, sig_y_GP]]) # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
         ew_bot.append(ew_GP)
         ev_bot.append(ev_GP)
-
+    
+    return  ew_top, ev_top, ew_bot, ev_bot, length_stress
 
 
 

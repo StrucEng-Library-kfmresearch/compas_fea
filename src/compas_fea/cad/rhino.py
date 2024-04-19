@@ -1574,8 +1574,8 @@ def plot_principal_strains(structure, step, shell_layer, cbar_size=1, scale=1000
     # --------------------------------------------------------------------------
     # test area
 
-
     ew_top, ev_top, ew_bot, ev_bot, length_=functions.principal_stresses(data,kind='eps')  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+    
     
     if shell_layer == 'top':
         ew=ew_top
