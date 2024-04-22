@@ -37,6 +37,7 @@ else:
     from compas.rpc import Proxy
     functions = Proxy('compas_fea.utilities.functions')
     meshing = Proxy('compas_fea.utilities.meshing')
+    
 
 if compas.RHINO:
     import rhinoscriptsyntax as rs
@@ -1228,7 +1229,7 @@ def plot_principal_stresses(structure, step, shell_layer, cbar_size=1, scale=10,
 
     # Berechnung der Hauptspannungen und dessen Richtungen (in lokalen Koordinaten)
     # --------------------------------------------------------------------------
-
+    
     ew_top, ev_top, ew_bot, ev_bot, length_stress=functions.principal_stresses(data,kind='sigma')   # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
   
     if shell_layer == 'top':
@@ -1531,7 +1532,6 @@ def plot_principal_strains(structure, step, shell_layer, cbar_size=1, scale=1000
     """
     # Einlesen der Daten
     data = structure.results[step]['GP'] 
-    
     # Pro Element jeweils 4 mal (=Anzahl GP) abfullen   
     
     if shell_layer == 'top':
@@ -1561,7 +1561,7 @@ def plot_principal_strains(structure, step, shell_layer, cbar_size=1, scale=1000
     k_riss=data['k_riss']  
     fcc=data['fcc']
 
-  
+    
 
     # Aufbau Layer
     # --------------------------------------------------------------------------
@@ -1572,9 +1572,11 @@ def plot_principal_strains(structure, step, shell_layer, cbar_size=1, scale=1000
 
     # Berechnung der Hauptverzerrungen und dessen Richtungen (in lokalen Koordinaten)
     # --------------------------------------------------------------------------
-    
-    ew_top, ev_top, ew_bot, ev_bot, length_=functions.principal_stresses(data,kind='eps')  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+    # test area
 
+    ew_top, ev_top, ew_bot, ev_bot, length_=functions.principal_stresses(data,kind='eps')  # ew = Eigenwerte (Hauptspannungen), ev=eigenvektoren (Hauptspannungsrichtungen),
+    
+    
     if shell_layer == 'top':
         ew=ew_top
         ev=ev_top
