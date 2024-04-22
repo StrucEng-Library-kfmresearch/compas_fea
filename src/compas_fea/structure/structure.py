@@ -7,6 +7,7 @@ from __future__ import print_function
 
 from compas_fea.fea.ansys_sel import ansys_sel
 
+from compas_fea.utilities.verifications import verification
 
 # from compas_fea.utilities import combine_all_sets
 # from compas_fea.utilities import group_keys_by_attribute
@@ -69,7 +70,7 @@ class Structure(ObjectMixins, ElementMixins, NodeMixins):
     path : str
         Path to save files.
     results : dict
-        Dictionary containing analysis results.
+        Dictionary containing analysis and verification results.
     sections : dict
         Section objects.
     sets : dict
@@ -752,6 +753,26 @@ loc coor
             data[key] = rdict[field][key]
 
         return data
+    
+    def calc_verifications(self, step, field='all',D_max=None, tau_cd=None):
+        """Calculate verifications from the analysis results and add them to the structure results. 
+        Caluclate Eta, which we define as resistance over demand.
+
+        Parameters
+        ----------
+        step : str
+            Step to extract from.
+        verifications : str
+            verficiations that should be calculates (e.g., 'shear', 'all')
+
+
+        Returns
+        -------
+        None
+
+        """
+
+        verification(self, step=step,field=field, D_max=D_max, tau_cd=tau_cd)
 
     # ==============================================================================
     # Summary
