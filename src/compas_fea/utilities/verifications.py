@@ -60,12 +60,13 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
     if field == 'shear' or field == 'all':
 
         if D_max != None and tau_cd != None: #required imput atm
-            print('Dmax is ok')
 
             #initialize
             structure.results[step]['element']['v_rd']={}
             structure.results[step]['element']['v0']={}
             structure.results[step]['element']['eta_v']={}
+            structure.results[step]['element']['eps_06d_loc_decisive']={}
+            structure.results[step]['element']['centroid']={}
 
             # extract data
             kmax = structure.element_count() # Anzahl Elemente, Startwert bei 1 nicht bei 0!
@@ -102,6 +103,11 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
             # Start 
             for k in range(kmax): 
                 ele_type = structure.results[step]['element']['ele_type'][k].values()
+
+                #initialize
+                v_rd=None
+                v0=None
+
                 if ele_type[0] == 1.0:
                     #sf4-->vx
                     sf4 = structure.results[step]['element']['sf4'][k].values()
@@ -132,28 +138,37 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
                     
                     # Decision which values (top or bot) is decisive and calculation of the corresponding d_v (midpoint element)
                     if eps_06d_top_mean > 0 and eps_06d_bot_mean < 0:
-                        eps_06d_mean=eps_06d_top_mean # eps from top 
+                        #case: only top is positive ->eps from top
+                        eps_06d_mean=eps_06d_top_mean 
+                        eps_06d_loc_decisive='top'
                         d_s1_top = h_shell[k]-uu[k]-dm_1[k]/2 
                         d_s2_top = h_shell[k]-uu[k]-dm_1[k]-dm_2[k]/2
                         d_v=(d_s1_top+d_s2_top)/2 # from top
                         Nr_layer=LNr_d06_top[k]
                     elif eps_06d_top_mean > 0 and eps_06d_bot_mean > 0:
-                        if eps_06d_top_mean > eps_06d_bot_mean:
-                            eps_06d_mean=eps_06d_top_mean    
+                        #case: both bot and top are positive ->take maximum eps
+                        if eps_06d_top_mean >= eps_06d_bot_mean:
+                            eps_06d_mean=eps_06d_top_mean  
+                            eps_06d_loc_decisive='top' 
                             d_s1_top = h_shell[k]-uu[k]-dm_1[k]/2 
                             d_s2_top = h_shell[k]-uu[k]-dm_1[k]-dm_2[k]/2
                             d_v=(d_s1_top+d_s2_top)/2 # from top    
                             Nr_layer=LNr_d06_top[k]        
                         elif eps_06d_top_mean < eps_06d_bot_mean:
                             eps_06d_mean=eps_06d_bot_mean 
+                            eps_06d_loc_decisive='bot'
                             d_s4_bot = h_shell[k]-oo[k]-dm_4[k]/2 
                             d_s3_bot = h_shell[k]-oo[k]-dm_4[k]-dm_3[k]/2
                             d_v=(d_s4_bot+d_s3_bot)/2 # from bot 
                             Nr_layer=LNr_d06_bot[k]                   
                     elif eps_06d_top_mean <= 0 and eps_06d_bot_mean <= 0:
+                        #case: both bot and top are negative ->take no eps
                         eps_06d_mean=None #not defined as positiv
+                        eps_06d_loc_decisive=None
                     elif eps_06d_top_mean < 0 and eps_06d_bot_mean > 0:
+                        #case: only bot is positive ->take eps from bot
                         eps_06d_mean=eps_06d_bot_mean
+                        eps_06d_loc_decisive='bot'
                         d_s4_bot = h_shell[k]-oo[k]-dm_4[k]/2 
                         d_s3_bot = h_shell[k]-oo[k]-dm_4[k]-dm_3[k]/2
                         d_v=(d_s4_bot+d_s3_bot)/2 # from bot  
@@ -174,6 +189,8 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
                         structure.results[step]['element']['eta_v'][k]=v_rd/v0
                     else:
                         structure.results[step]['element']['eta_v'][k]=None
+                    structure.results[step]['element']['eps_06d_loc_decisive'][k]=eps_06d_loc_decisive
+                    structure.results[step]['element']['centroid'][k]= structure.element_centroid(element=k) 
                 
 
 

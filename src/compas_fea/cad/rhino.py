@@ -2106,7 +2106,7 @@ def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, 
     loc_y_glob_y=data['elem_loc_y_glob_y'].values()    
     loc_y_glob_z=data['elem_loc_y_glob_z'].values()    
     
-    # This code was moved to verification function  (if sufficent can be deleted)      
+    # This code was moved to verification function (if sufficent can be deleted)      
     # # Extract data for SHEAR VERIFICATION
     # if shear_verification=='yes':
     #     data_eps_x_06d_bot = structure.results[step]['GP']['eps_x_06d_bot']   
