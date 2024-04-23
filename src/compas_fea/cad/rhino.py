@@ -2058,6 +2058,42 @@ def plot_steel_stresses(structure, step, Reinf_layer, cbar_size=1, scale=1, laye
 
 def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, layer=None, numeric='no', shear_verification='no', D_max=32, tau_cd=None):
 
+    """
+    Plots the principal shear
+
+    Parameters
+    ----------
+    structure : obj
+        Structure object.
+    step : str
+        Name of the Step.
+    fields : str
+        verification field requests (e.g. 'all', 'shear').
+    cbar_size : float
+        Color bar size.
+    scale : float
+        Scale on the length of the line markers (usually 10^6).
+    layer : str
+        Layer name for plotting.
+    numeric : str
+        Flag if the numerical verification values should be plotted ('yes' or 'no')
+    shear_verification: str
+        Flag of shear reistance and verification should be caluclated an plotted ('yes' or 'no').
+    D_max: float
+        maximum aggregate size [mm] (e.g. 32)
+    tau_cd: float
+        Design value of shear stress limit [N/mm2] (e.g. 1.4)
+
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    - Centroids are taken on the undeformed geometry.
+
+    """
 
     # extract data
     kmax = structure.element_count() # Anzahl Elemente, Startwert bei 1 nicht bei 0!
@@ -2070,33 +2106,41 @@ def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, 
     loc_y_glob_y=data['elem_loc_y_glob_y'].values()    
     loc_y_glob_z=data['elem_loc_y_glob_z'].values()    
     
-               
-    # Extract data for SHEAR VERIFICATION
-    if shear_verification=='yes':
-        data_eps_x_06d_bot = structure.results[step]['GP']['eps_x_06d_bot']   
-        data_eps_y_06d_bot = structure.results[step]['GP']['eps_y_06d_bot']   
-        data_eps_xy_06d_bot = structure.results[step]['GP']['eps_xy_06d_bot']   
+    # This code was moved to verification function  (if sufficent can be deleted)      
+    # # Extract data for SHEAR VERIFICATION
+    # if shear_verification=='yes':
+    #     data_eps_x_06d_bot = structure.results[step]['GP']['eps_x_06d_bot']   
+    #     data_eps_y_06d_bot = structure.results[step]['GP']['eps_y_06d_bot']   
+    #     data_eps_xy_06d_bot = structure.results[step]['GP']['eps_xy_06d_bot']   
         
-        data_eps_x_06d_top = structure.results[step]['GP']['eps_x_06d_top']   
-        data_eps_y_06d_top = structure.results[step]['GP']['eps_y_06d_top']   
-        data_eps_xy_06d_top = structure.results[step]['GP']['eps_xy_06d_top']   
+    #     data_eps_x_06d_top = structure.results[step]['GP']['eps_x_06d_top']   
+    #     data_eps_y_06d_top = structure.results[step]['GP']['eps_y_06d_top']   
+    #     data_eps_xy_06d_top = structure.results[step]['GP']['eps_xy_06d_top']   
 
-        psi_1=structure.results[step]['element_info']['psi_1'].values() 
-        psi_2=structure.results[step]['element_info']['psi_2'].values() 
-        psi_3=structure.results[step]['element_info']['psi_3'].values() 
-        psi_4=structure.results[step]['element_info']['psi_4'].values() 
+    #     psi_1=structure.results[step]['element_info']['psi_1'].values() 
+    #     psi_2=structure.results[step]['element_info']['psi_2'].values() 
+    #     psi_3=structure.results[step]['element_info']['psi_3'].values() 
+    #     psi_4=structure.results[step]['element_info']['psi_4'].values() 
 
-        dm_1=structure.results[step]['element_info']['dm1'].values() 
-        dm_2=structure.results[step]['element_info']['dm2'].values() 
-        dm_3=structure.results[step]['element_info']['dm3'].values() 
-        dm_4=structure.results[step]['element_info']['dm4'].values()   
+    #     dm_1=structure.results[step]['element_info']['dm1'].values() 
+    #     dm_2=structure.results[step]['element_info']['dm2'].values() 
+    #     dm_3=structure.results[step]['element_info']['dm3'].values() 
+    #     dm_4=structure.results[step]['element_info']['dm4'].values()   
 
-        oo=structure.results[step]['element_info']['oo'].values() 
-        uu=structure.results[step]['element_info']['uu'].values() 
-        h_shell=structure.results[step]['element_info']['h_shell'].values() 
-        LNr_d06_bot=structure.results[step]['element_info']['LNr_d06_bot'].values() 
-        LNr_d06_top=structure.results[step]['element_info']['LNr_d06_top'].values()      
-        fcc=structure.results[step]['element_info']['fcc'].values()      
+    #     oo=structure.results[step]['element_info']['oo'].values() 
+    #     uu=structure.results[step]['element_info']['uu'].values() 
+    #     h_shell=structure.results[step]['element_info']['h_shell'].values() 
+    #     LNr_d06_bot=structure.results[step]['element_info']['LNr_d06_bot'].values() 
+    #     LNr_d06_top=structure.results[step]['element_info']['LNr_d06_top'].values()      
+    #     fcc=structure.results[step]['element_info']['fcc'].values() 
+
+    # Shear strength and verification (optional)
+    if shear_verification=='yes':
+        #check if verification is already done, if not perform verification
+        if ('v_rd' not in structure.results[step]['element']) or ('v_rd' not in structure.results[step]['element']):
+            #verification(structure=structure, step=step, field='shear', D_max=D_max, tau_cd=tau_cd)
+            structure.calc_verifications(step=step, field='shear', D_max=D_max, tau_cd=tau_cd)
+
 
 
     # Aufbau Layer
@@ -2147,60 +2191,61 @@ def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, 
             v_plus_fiktiv_trans_rot=v_plus_fiktiv_trans.transformed(T) 
             v_minus_fiktiv_trans_rot=v_minus_fiktiv_trans.transformed(T) 
             
-            # step 5: Shear strength and verification (optional)
-            if shear_verification=='yes':
-                anlge_shear_ver=angle_v0 # Independon from a "main reinforcement"
+            # This code was moved to verification function (if sufficent can be deleted)
+            # # step 5: Shear strength and verification (optional)
+            # if shear_verification=='yes':
+            #     anlge_shear_ver=angle_v0 # Independon from a "main reinforcement"
 
-                # Calculate mean values fro eps_06d bot and top (original values on GP and not at element midpoint!)    
-                k_eps=k*4   
-                eps_x_06d_bot_mean=(data_eps_x_06d_bot[k_eps]+data_eps_x_06d_bot[k_eps+1]+data_eps_x_06d_bot[k_eps+2]+data_eps_x_06d_bot[k_eps+3])/2
-                eps_y_06d_bot_mean=(data_eps_y_06d_bot[k_eps]+data_eps_y_06d_bot[k_eps+1]+data_eps_y_06d_bot[k_eps+2]+data_eps_y_06d_bot[k_eps+3])/2
-                eps_xy_06d_bot_mean=(data_eps_xy_06d_bot[k_eps]+data_eps_xy_06d_bot[k_eps+1]+data_eps_xy_06d_bot[k_eps+2]+data_eps_xy_06d_bot[k_eps+3])/2
-                eps_06d_bot_mean=eps_x_06d_bot_mean*math.cos(anlge_shear_ver)**2+eps_y_06d_bot_mean*math.sin(anlge_shear_ver)**2+eps_xy_06d_bot_mean*math.cos(anlge_shear_ver)*math.sin(anlge_shear_ver)
+            #     # Calculate mean values fro eps_06d bot and top (original values on GP and not at element midpoint!)    
+            #     k_eps=k*4   
+            #     eps_x_06d_bot_mean=(data_eps_x_06d_bot[k_eps]+data_eps_x_06d_bot[k_eps+1]+data_eps_x_06d_bot[k_eps+2]+data_eps_x_06d_bot[k_eps+3])/2
+            #     eps_y_06d_bot_mean=(data_eps_y_06d_bot[k_eps]+data_eps_y_06d_bot[k_eps+1]+data_eps_y_06d_bot[k_eps+2]+data_eps_y_06d_bot[k_eps+3])/2
+            #     eps_xy_06d_bot_mean=(data_eps_xy_06d_bot[k_eps]+data_eps_xy_06d_bot[k_eps+1]+data_eps_xy_06d_bot[k_eps+2]+data_eps_xy_06d_bot[k_eps+3])/2
+            #     eps_06d_bot_mean=eps_x_06d_bot_mean*math.cos(anlge_shear_ver)**2+eps_y_06d_bot_mean*math.sin(anlge_shear_ver)**2+eps_xy_06d_bot_mean*math.cos(anlge_shear_ver)*math.sin(anlge_shear_ver)
 
-                eps_x_06d_top_mean=(data_eps_x_06d_top[k_eps]+data_eps_x_06d_top[k_eps+1]+data_eps_x_06d_top[k_eps+2]+data_eps_x_06d_top[k_eps+3])/2
-                eps_y_06d_top_mean=(data_eps_y_06d_top[k_eps]+data_eps_y_06d_top[k_eps+1]+data_eps_y_06d_top[k_eps+2]+data_eps_y_06d_top[k_eps+3])/2
-                eps_xy_06d_top_mean=(data_eps_xy_06d_top[k_eps]+data_eps_xy_06d_top[k_eps+1]+data_eps_xy_06d_top[k_eps+2]+data_eps_xy_06d_top[k_eps+3])/2
-                eps_06d_top_mean=eps_x_06d_top_mean*math.cos(anlge_shear_ver)**2+eps_y_06d_top_mean*math.sin(anlge_shear_ver)**2+eps_xy_06d_top_mean*math.cos(anlge_shear_ver)*math.sin(anlge_shear_ver)
+            #     eps_x_06d_top_mean=(data_eps_x_06d_top[k_eps]+data_eps_x_06d_top[k_eps+1]+data_eps_x_06d_top[k_eps+2]+data_eps_x_06d_top[k_eps+3])/2
+            #     eps_y_06d_top_mean=(data_eps_y_06d_top[k_eps]+data_eps_y_06d_top[k_eps+1]+data_eps_y_06d_top[k_eps+2]+data_eps_y_06d_top[k_eps+3])/2
+            #     eps_xy_06d_top_mean=(data_eps_xy_06d_top[k_eps]+data_eps_xy_06d_top[k_eps+1]+data_eps_xy_06d_top[k_eps+2]+data_eps_xy_06d_top[k_eps+3])/2
+            #     eps_06d_top_mean=eps_x_06d_top_mean*math.cos(anlge_shear_ver)**2+eps_y_06d_top_mean*math.sin(anlge_shear_ver)**2+eps_xy_06d_top_mean*math.cos(anlge_shear_ver)*math.sin(anlge_shear_ver)
                 
-                # Decision which values (top or bot) is decisive and calculation of the corresponding d_v (midpoint element)
-                if eps_06d_top_mean > 0 and eps_06d_bot_mean < 0:
-                    eps_06d_mean=eps_06d_top_mean # eps from top 
-                    d_s1_top = h_shell[k]-uu[k]-dm_1[k]/2 
-                    d_s2_top = h_shell[k]-uu[k]-dm_1[k]-dm_2[k]/2
-                    d_v=(d_s1_top+d_s2_top)/2 # from top
-                    Nr_layer=LNr_d06_top[k]
-                elif eps_06d_top_mean > 0 and eps_06d_bot_mean > 0:
-                    if eps_06d_top_mean > eps_06d_bot_mean:
-                        eps_06d_mean=eps_06d_top_mean    
-                        d_s1_top = h_shell[k]-uu[k]-dm_1[k]/2 
-                        d_s2_top = h_shell[k]-uu[k]-dm_1[k]-dm_2[k]/2
-                        d_v=(d_s1_top+d_s2_top)/2 # from top    
-                        Nr_layer=LNr_d06_top[k]        
-                    elif eps_06d_top_mean < eps_06d_bot_mean:
-                        eps_06d_mean=eps_06d_bot_mean 
-                        d_s4_bot = h_shell[k]-oo[k]-dm_4[k]/2 
-                        d_s3_bot = h_shell[k]-oo[k]-dm_4[k]-dm_3[k]/2
-                        d_v=(d_s4_bot+d_s3_bot)/2 # from bot 
-                        Nr_layer=LNr_d06_bot[k]                   
-                elif eps_06d_top_mean <= 0 and eps_06d_bot_mean <= 0:
-                    eps_06d_mean=None #not defined as positiv
-                elif eps_06d_top_mean < 0 and eps_06d_bot_mean > 0:
-                    eps_06d_mean=eps_06d_bot_mean
-                    d_s4_bot = h_shell[k]-oo[k]-dm_4[k]/2 
-                    d_s3_bot = h_shell[k]-oo[k]-dm_4[k]-dm_3[k]/2
-                    d_v=(d_s4_bot+d_s3_bot)/2 # from bot  
-                    Nr_layer=LNr_d06_bot[k]
+            #     # Decision which values (top or bot) is decisive and calculation of the corresponding d_v (midpoint element)
+            #     if eps_06d_top_mean > 0 and eps_06d_bot_mean < 0:
+            #         eps_06d_mean=eps_06d_top_mean # eps from top 
+            #         d_s1_top = h_shell[k]-uu[k]-dm_1[k]/2 
+            #         d_s2_top = h_shell[k]-uu[k]-dm_1[k]-dm_2[k]/2
+            #         d_v=(d_s1_top+d_s2_top)/2 # from top
+            #         Nr_layer=LNr_d06_top[k]
+            #     elif eps_06d_top_mean > 0 and eps_06d_bot_mean > 0:
+            #         if eps_06d_top_mean > eps_06d_bot_mean:
+            #             eps_06d_mean=eps_06d_top_mean    
+            #             d_s1_top = h_shell[k]-uu[k]-dm_1[k]/2 
+            #             d_s2_top = h_shell[k]-uu[k]-dm_1[k]-dm_2[k]/2
+            #             d_v=(d_s1_top+d_s2_top)/2 # from top    
+            #             Nr_layer=LNr_d06_top[k]        
+            #         elif eps_06d_top_mean < eps_06d_bot_mean:
+            #             eps_06d_mean=eps_06d_bot_mean 
+            #             d_s4_bot = h_shell[k]-oo[k]-dm_4[k]/2 
+            #             d_s3_bot = h_shell[k]-oo[k]-dm_4[k]-dm_3[k]/2
+            #             d_v=(d_s4_bot+d_s3_bot)/2 # from bot 
+            #             Nr_layer=LNr_d06_bot[k]                   
+            #     elif eps_06d_top_mean <= 0 and eps_06d_bot_mean <= 0:
+            #         eps_06d_mean=None #not defined as positiv
+            #     elif eps_06d_top_mean < 0 and eps_06d_bot_mean > 0:
+            #         eps_06d_mean=eps_06d_bot_mean
+            #         d_s4_bot = h_shell[k]-oo[k]-dm_4[k]/2 
+            #         d_s3_bot = h_shell[k]-oo[k]-dm_4[k]-dm_3[k]/2
+            #         d_v=(d_s4_bot+d_s3_bot)/2 # from bot  
+            #         Nr_layer=LNr_d06_bot[k]
 
-                # Calculation of shear resistance accorindg to SIA 269              
-                if eps_06d_mean != None:    
-                    k_g=48/(16+D_max)
-                    k_d=1/(1+2.5*eps_06d_mean*d_v*k_g)                
-                    v_rd=k_d*tau_cd*d_v                    
-                else:
-                    v_rd=None
+            #     # Calculation of shear resistance accorindg to SIA 269              
+            #     if eps_06d_mean != None:    
+            #         k_g=48/(16+D_max)
+            #         k_d=1/(1+2.5*eps_06d_mean*d_v*k_g)                
+            #         v_rd=k_d*tau_cd*d_v                    
+            #     else:
+            #         v_rd=None
 
-
+            
             # step 6: Ploten in Rhino (only if sig_sr_GP>0.01)
             if shear_verification=='no':
                 id = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
@@ -2211,6 +2256,8 @@ def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, 
                     rs.ObjectColor(id1_text, col) 
 
             elif shear_verification=='yes':
+                v_rd=structure.results[step]['element']['v_rd'][k]
+                v0=structure.results[step]['element']['v0'][k]
                 if v_rd != None: 
                     if v0 <= v_rd:                    
                         id = rs.AddLine(add_vectors(centroid, v_minus_fiktiv_trans_rot), add_vectors(centroid, v_plus_fiktiv_trans_rot))                
@@ -2235,7 +2282,11 @@ def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, 
                         col1=[0,0,0]
                         rs.ObjectColor(id1_text, col1) 
                     else:
-                        pass                                      
+                        pass        
+            else:
+                raise ValueError(' The input for shear_verification is invalid. Please input "yes" or "no".')                           
+
+        
 
             # Plot Colorbar
             
@@ -2261,6 +2312,7 @@ def plot_principal_shear(structure, step, field='shear', cbar_size=1, scale=10, 
                     id=rs.AddText('v0 > vrd', [x0, yl, 0], height=h)
                     col=[255,0,0]
                     rs.ObjectColor(id, col)
+
 
 
 def plot_voxels(structure, step, field='smises', cbar=[None, None], iptype='mean', nodal='mean', vdx=None, mode=''):

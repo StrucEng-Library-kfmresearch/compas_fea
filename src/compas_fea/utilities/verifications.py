@@ -34,25 +34,23 @@ import math
 
 
 def verification(structure, step, field='all', D_max=None, tau_cd=None):
-    """caluclates the verification results and saves them to the structure object.
+    """Extracts analysis results from structure.results and calculated verifications and saves these in the results.
     Parameters
     ----------
     structure : obj
         The Structure object to read from.
-    dtype : str
-        'nodal' or 'element'.
-    iptype : str
-        'mean', 'max' or 'min' of an element's integration point data.
-    nodal : str
-        'mean', 'max' or 'min' for nodal data conversion.
-    elements : list
-        Node numbers for each element.
-    n : int
-        Number of nodes.
+    step : str
+        name of the load step to take the analysis results from (e.g. 'step_1').
+    fields : str
+        verification field requests (e.g. 'all', 'shear').
+    D_max: float
+        maximum aggregate size [mm] (e.g. 32)
+    tau_cd: float
+        Design value of shear stress limit [N/mm2] (e.g. 1.4)
+
     Returns
     -------
-    verifications : dict
-        Returns the calculated verfification results.
+    None.
     """
 
     # ==============================================================================
@@ -71,7 +69,7 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
 
             # extract data
             kmax = structure.element_count() # Anzahl Elemente, Startwert bei 1 nicht bei 0!
-            data = structure.results[step]['element_info']
+            #data = structure.results[step]['element_info']
                
     
                
@@ -176,22 +174,11 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
                         structure.results[step]['element']['eta_v'][k]=v_rd/v0
                     else:
                         structure.results[step]['element']['eta_v'][k]=None
-
-                    
                 
-                print(structure.results[step]['element']['v_rd'])
-                print(structure.results[step]['element']['v0'])
-                print(structure.results[step]['element']['eta_v'])
-                    
 
 
         else: 
             raise ValueError('D_max or tau_cd is None. Please define D_max and tau_cd. This is necessary for the shear verficiation')
         
-        
-
-        # TODO this was implemented by Maris in compas_fea cad rhino.py plot_principal_shear
-        # TODO move this implementation to here so that we get the verification results without the plot
-        # TODO the implementation is at the moment a loop through all elements - could possibily be made more efficient using vectors and matrices operations
 
     
