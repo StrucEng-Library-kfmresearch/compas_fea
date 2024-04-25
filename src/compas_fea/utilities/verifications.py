@@ -126,14 +126,14 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
 
                     # Calculate mean values fro eps_06d bot and top (original values on GP and not at element midpoint!)    
                     k_eps=k*4   
-                    eps_x_06d_bot_mean=(data_eps_x_06d_bot[k_eps]+data_eps_x_06d_bot[k_eps+1]+data_eps_x_06d_bot[k_eps+2]+data_eps_x_06d_bot[k_eps+3])/2
-                    eps_y_06d_bot_mean=(data_eps_y_06d_bot[k_eps]+data_eps_y_06d_bot[k_eps+1]+data_eps_y_06d_bot[k_eps+2]+data_eps_y_06d_bot[k_eps+3])/2
-                    eps_xy_06d_bot_mean=(data_eps_xy_06d_bot[k_eps]+data_eps_xy_06d_bot[k_eps+1]+data_eps_xy_06d_bot[k_eps+2]+data_eps_xy_06d_bot[k_eps+3])/2
+                    eps_x_06d_bot_mean=(data_eps_x_06d_bot[k_eps]+data_eps_x_06d_bot[k_eps+1]+data_eps_x_06d_bot[k_eps+2]+data_eps_x_06d_bot[k_eps+3])/4
+                    eps_y_06d_bot_mean=(data_eps_y_06d_bot[k_eps]+data_eps_y_06d_bot[k_eps+1]+data_eps_y_06d_bot[k_eps+2]+data_eps_y_06d_bot[k_eps+3])/4
+                    eps_xy_06d_bot_mean=(data_eps_xy_06d_bot[k_eps]+data_eps_xy_06d_bot[k_eps+1]+data_eps_xy_06d_bot[k_eps+2]+data_eps_xy_06d_bot[k_eps+3])/4
                     eps_06d_bot_mean=eps_x_06d_bot_mean*math.cos(anlge_shear_ver)**2+eps_y_06d_bot_mean*math.sin(anlge_shear_ver)**2+eps_xy_06d_bot_mean*math.cos(anlge_shear_ver)*math.sin(anlge_shear_ver)
 
-                    eps_x_06d_top_mean=(data_eps_x_06d_top[k_eps]+data_eps_x_06d_top[k_eps+1]+data_eps_x_06d_top[k_eps+2]+data_eps_x_06d_top[k_eps+3])/2
-                    eps_y_06d_top_mean=(data_eps_y_06d_top[k_eps]+data_eps_y_06d_top[k_eps+1]+data_eps_y_06d_top[k_eps+2]+data_eps_y_06d_top[k_eps+3])/2
-                    eps_xy_06d_top_mean=(data_eps_xy_06d_top[k_eps]+data_eps_xy_06d_top[k_eps+1]+data_eps_xy_06d_top[k_eps+2]+data_eps_xy_06d_top[k_eps+3])/2
+                    eps_x_06d_top_mean=(data_eps_x_06d_top[k_eps]+data_eps_x_06d_top[k_eps+1]+data_eps_x_06d_top[k_eps+2]+data_eps_x_06d_top[k_eps+3])/4
+                    eps_y_06d_top_mean=(data_eps_y_06d_top[k_eps]+data_eps_y_06d_top[k_eps+1]+data_eps_y_06d_top[k_eps+2]+data_eps_y_06d_top[k_eps+3])/4
+                    eps_xy_06d_top_mean=(data_eps_xy_06d_top[k_eps]+data_eps_xy_06d_top[k_eps+1]+data_eps_xy_06d_top[k_eps+2]+data_eps_xy_06d_top[k_eps+3])/4
                     eps_06d_top_mean=eps_x_06d_top_mean*math.cos(anlge_shear_ver)**2+eps_y_06d_top_mean*math.sin(anlge_shear_ver)**2+eps_xy_06d_top_mean*math.cos(anlge_shear_ver)*math.sin(anlge_shear_ver)
                     
                     # Decision which values (top or bot) is decisive and calculation of the corresponding d_v (midpoint element)
