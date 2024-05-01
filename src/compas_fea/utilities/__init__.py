@@ -65,6 +65,10 @@ from .meshing import (
     tets_from_vertices_faces,
 )
 
+from .verifications import (
+    verification
+)
+
 __all__ = [
     'colorbar',
     'combine_all_sets',
