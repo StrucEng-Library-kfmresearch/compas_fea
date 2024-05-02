@@ -177,7 +177,7 @@ class Results(object):
                 self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
                 self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_x + '(1) , \',\' , ' + name_y + '(1) , \',\' ,' + name_z + '(1)')
                 self.write_line('(          F100000.0,       A,       ES,           A,          ES,          A,      ES)')
-                self.write_line('*cfclose \n')
+                self.write_line('*cfclos \n')
                 self.write_line('!')
                 self.write_line('!')
                 cFile.close()
@@ -186,7 +186,7 @@ class Results(object):
             # WRITE DATA AT SHELL MIDPOINT
             # ------------------------------------------------------------------                
 
-            # Write shell forces and montents at shell mitdpoint (only for Shell elements)
+            # Write shell forces and monments at shell mitdpoint (only for Shell elements)
             # ------------------------------------------------------------------
             if 'sf' in fields or 'all' in fields:
 
@@ -243,6 +243,78 @@ class Results(object):
                 self.write_line('ETABLE, ERAS ')
                 self.write_line('! ')
                 cFile.close()
+
+            
+            # Write generalised shell strains and curvatures at shell mitdpoint (only for Shell elements, added by VB)
+            # ------------------------------------------------------------------
+            if 'seps' in fields or 'all' in fields:
+
+                fname = str(step_name) + '_' + 'shell_strains_curvatures'
+                name_ = 'ele_seps'
+
+                # Abfuellen der Resultates
+                cFile = open(os.path.join(path, filename), 'a')
+                self.blank_line()
+                self.write_line('! Write Shell strains and curvatures')
+                self.blank_line()
+                self.write_line('allsel')
+
+                self.write_line('ETABLE, , SMISC, 9 ')  # eps_11 In-plane strains (per unit length)
+                self.write_line('ETABLE, , SMISC, 10 ')  # eps_22 In-plane strains (per unit length)
+                self.write_line('ETABLE, , SMISC, 11 ')  # eps_12 In-plane strains (per unit length)
+
+                self.write_line('ETABLE, , SMISC, 12 ')  # k_11 Out-of-plane curvature (per unit length)
+                self.write_line('ETABLE, , SMISC, 13 ')  # k_22 Out-of-plane curvature (per unit length)
+                self.write_line('ETABLE, , SMISC, 14 ')  # k_12 Out-of-plane curvature (per unit length)
+
+                self.write_line('ETABLE, , SMISC, 15 ')  # gamma_13 Out-of-plane shear strain (per unit length)
+                self.write_line('ETABLE, , SMISC, 16 ')  # gamma_23 Out-of-plane shear strain (per unit length)
+
+                self.write_line('*get, nelem, elem,, count ')
+                self.write_line('*dim, enum, array, nelem, 1 ')
+                self.write_line('*dim, estrains, array, nelem, 9  ')
+                self.write_line('*vget, enum, ELEM, , ELIST ')
+            
+
+                self.write_line('*do,i,1,nelem ')
+                self.write_line('*if,elem_infos(i,1),EQ,1,THEN  ')             # Abfullen bei Schalenelemente
+                self.write_line('*get, estrains(i, 1), ETAB, 1, ELEM, enum(i) ') # eps_11 In-plane strains (per unit length)
+                self.write_line('*get, estrains(i, 2), ETAB, 2, ELEM, enum(i) ') # eps_22 In-plane strains (per unit length)
+                self.write_line('*get, estrains(i, 3), ETAB, 3, ELEM, enum(i) ') # eps_12 In-plane strains (per unit length)
+                self.write_line('*get, estrains(i, 4), ETAB, 7, ELEM, enum(i) ') # gamma_13 Out-of-plane shear strains (per unit length)
+                self.write_line('*get, estrains(i, 5), ETAB, 8, ELEM, enum(i) ') # gamma_23 Out-of-plane shear strains (per unit length)
+                self.write_line('*get, estrains(i, 6), ETAB, 4, ELEM, enum(i) ') # k_11 Out-of-plane curvatures (per unit length)
+                self.write_line('*get, estrains(i, 7), ETAB, 5, ELEM, enum(i) ') # k_22 Out-of-plane curvatures (per unit length)
+                self.write_line('*get, estrains(i, 8), ETAB, 6, ELEM, enum(i) ') # k_12 Out-of-plane curvatures (per unit length)     
+                self.write_line('estrains(i, 9)=elem_infos(i,1)') 
+                self.write_line('*else')    
+                self.write_line('*endif')    
+                self.write_line('*Enddo ')
+                
+
+                fname = str(step_name) + '_' + 'shell_strains_curvatures'
+                self.write_line('*cfopen,' + out_path + '/' + fname + ',txt ')
+                #self.write_line('*CFWRITE, stresses, E number, Sm11, Sm22, Sm12, Sb11 \n')
+                self.write_line('*do,i,1,nelem ')
+                #self.write_line('*CFWRITE, stresses, enum(i,1), estrains(i,1), estrains(i,2),estrains(i,3), estrains(i,2) \n')
+                self.write_line('*CFWRITE, shell_strains_curvatures, enum(i,1), estrains(i,1), estrains(i,2), estrains(i,3), estrains(i,4), estrains(i,5), estrains(i,6), estrains(i,7), estrains(i,8), estrains(i,9)')
+                self.write_line('*Enddo ')
+                self.write_line('ESEL, ALL ')
+                self.write_line('ETABLE, ERAS ')
+                self.write_line('! ')
+
+                # self.write_line('*vfill,' + name_ + '(1),ramp,1,1')
+                # self.write_line('*cfopen,' + out_path + '/' + fname + ',txt')
+                # self.write_line('*vwrite, ' + name_ + '(1) , \',\'  , ' + name_loc_x_glob_x + '(1) , \',\' , ' + name_loc_x_glob_y + '(1) , \',\' ,' + name_loc_x_glob_z + '(1) , \',\' ,'+ name_loc_y_glob_x + '(1) , \',\' ,' + name_loc_y_glob_y + '(1) , \',\' ,'+ name_loc_y_glob_z + '(1) , \',\' ,' + name_elem_typ + '(1) ')
+                # self.write_line('(F100000.0,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES,A,ES)')
+                # self.write_line('*cfclose \n')
+                # self.write_line('!')
+                # self.write_line('!')
+                cFile.close()
+
+
+
+
 
 
             # ------------------------------------------------------------------
