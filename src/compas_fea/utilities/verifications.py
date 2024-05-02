@@ -70,6 +70,7 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
                 structure.results[step]['element']['v0']={}
                 structure.results[step]['element']['eta_v']={}
                 structure.results[step]['element']['eps_06d_loc_decisive']={}
+                structure.results[step]['element']['dv']={}
                 structure.results[step]['element']['centroid']={}
 
                 # extract data
@@ -194,6 +195,7 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
                         else:
                             structure.results[step]['element']['eta_v'][k]=None
                         structure.results[step]['element']['eps_06d_loc_decisive'][k]=eps_06d_loc_decisive
+                        structure.results[step]['element']['dv'][k]=d_v
                         structure.results[step]['element']['centroid'][k]= structure.element_centroid(element=k) 
                     
 
