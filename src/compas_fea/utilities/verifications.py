@@ -170,6 +170,7 @@ def verification(structure, step, field='all', D_max=None, tau_cd=None):
                             #case: both bot and top are negative ->take no eps
                             eps_06d_mean=None #not defined as positiv
                             eps_06d_loc_decisive=None
+                            d_v=None
                         elif eps_06d_top_mean < 0 and eps_06d_bot_mean > 0:
                             #case: only bot is positive ->take eps from bot
                             eps_06d_mean=eps_06d_bot_mean
